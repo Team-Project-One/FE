@@ -1,6 +1,7 @@
 import React from "react";
 import { Pressable, Text, StyleSheet } from "react-native";
 import { ButtonViewProps } from "../types";
+import { COLORS, SIZES } from "../constants";
 
 /**
  * 앱 전체에서 사용되는 버튼 컴포넌트
@@ -27,14 +28,14 @@ const ButtonView: React.FC<ButtonViewProps> = ({
 
 const styles = StyleSheet.create({
   button: {
-    backgroundColor: "#002E66",
-    paddingVertical: 15,
-    paddingHorizontal: 30,
-    borderRadius: 5,
+    backgroundColor: COLORS.primary,
+    paddingVertical: SIZES.buttonPaddingVertical,
+    paddingHorizontal: SIZES.buttonPaddingHorizontal,
+    borderRadius: SIZES.borderRadius,
   },
   buttonText: {
-    color: "#ffff",
-    fontSize: 16,
+    color: COLORS.white,
+    fontSize: SIZES.fontSizeLarge,
     fontWeight: "bold",
   },
 });
