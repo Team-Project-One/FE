@@ -6,7 +6,6 @@ export type Screen =
   | "signupBasic"
   | "signupDetailed"
   | "home"
-  | "friends"
   | "mypage"
   | "matchingResult";
 

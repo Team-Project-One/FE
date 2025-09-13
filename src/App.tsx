@@ -33,8 +33,6 @@ const App: React.FC = () => {
         return <MyScreen onNavigate={handleNavigation} />;
       case "matchingResult":
         return <MatchingResultScreen onNavigate={handleNavigation} />;
-      case "friends":
-        return <MainScreen onNavigate={handleNavigation} />; // 임시로 MainScreen 사용
       default:
         return <SignupLandingScreen onNavigate={handleNavigation} />;
     }

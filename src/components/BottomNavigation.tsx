@@ -21,7 +21,7 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({ onNavigate }) => {
     >
       <ButtonView
         title="친구"
-        onPress={() => onNavigate("friends")}
+        onPress={() => onNavigate("home")} // 임시로 홈으로 이동
         buttonStyle={styles.navButton}
         textStyle={styles.navButtonText}
       />
