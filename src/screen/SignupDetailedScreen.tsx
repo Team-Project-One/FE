@@ -4,7 +4,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import ButtonView from "../components/ButtonView";
 import { SignupDetailedScreenProps, SignupDetailedFormData } from "../types";
-import { COLORS, SIZES, SPACING, LAYOUT } from "../constants";
 
 /**
  * 회원가입 상세 정보 입력 스크린 컴포넌트
