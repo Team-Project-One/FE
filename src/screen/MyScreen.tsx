@@ -6,6 +6,7 @@ import AppHeader from "../components/AppHeader";
 import BottomNavigation from "../components/BottomNavigation";
 import { MyScreenProps } from "../types";
 import { handleButtonPress } from "../utils";
+import { COLORS, SIZES, SPACING, LAYOUT } from "../constants";
 
 /**
  * 마이스크린 컴포넌트
@@ -70,41 +71,41 @@ const MyScreen: React.FC<MyScreenProps> = ({ onNavigate }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: COLORS.white,
   },
   content: {
     flexGrow: 1,
-    padding: 20,
+    padding: SPACING.contentPadding,
     alignItems: "center",
   },
   profileImageContainer: {
-    marginBottom: 20,
+    marginBottom: SPACING.headerPadding,
   },
   profileImage: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: "#E0E0E0",
+    width: LAYOUT.profileImageSize,
+    height: LAYOUT.profileImageSize,
+    borderRadius: LAYOUT.profileImageSize / 2,
+    backgroundColor: COLORS.gray,
     justifyContent: "center",
     alignItems: "center",
   },
   profileImageText: {
-    fontSize: 16,
-    color: "#666666",
+    fontSize: SIZES.fontSizeLarge,
+    color: COLORS.textSecondary,
   },
   userInfo: {
     alignItems: "center",
     marginBottom: 30,
   },
   userName: {
-    fontSize: 20,
+    fontSize: SIZES.fontSizeXXLarge,
     fontWeight: "bold",
-    color: "#333333",
-    marginBottom: 8,
+    color: COLORS.text,
+    marginBottom: SPACING.small,
   },
   userDetails: {
-    fontSize: 16,
-    color: "#666666",
+    fontSize: SIZES.fontSizeLarge,
+    color: COLORS.textSecondary,
   },
   detailsContainer: {
     flexDirection: "row",
@@ -114,31 +115,31 @@ const styles = StyleSheet.create({
   },
   detailBox: {
     flex: 1,
-    backgroundColor: "#F5F5F5",
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-    borderRadius: 8,
+    backgroundColor: COLORS.lightGray,
+    paddingVertical: SPACING.medium,
+    paddingHorizontal: SPACING.headerPadding,
+    borderRadius: SIZES.borderRadiusMedium,
     marginHorizontal: 5,
     alignItems: "center",
   },
   detailText: {
-    fontSize: 16,
-    color: "#333333",
+    fontSize: SIZES.fontSizeLarge,
+    color: COLORS.text,
   },
   actionButtons: {
     width: "100%",
-    gap: 15,
+    gap: SPACING.medium,
   },
   actionButton: {
-    backgroundColor: "#F5F5F5",
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-    borderRadius: 8,
+    backgroundColor: COLORS.lightGray,
+    paddingVertical: SPACING.medium,
+    paddingHorizontal: SPACING.headerPadding,
+    borderRadius: SIZES.borderRadiusMedium,
     width: "100%",
   },
   actionButtonText: {
-    color: "#333333",
-    fontSize: 16,
+    color: COLORS.text,
+    fontSize: SIZES.fontSizeLarge,
     fontWeight: "500",
     textAlign: "center",
   },

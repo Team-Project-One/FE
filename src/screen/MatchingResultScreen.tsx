@@ -6,6 +6,7 @@ import AppHeader from "../components/AppHeader";
 import BottomNavigation from "../components/BottomNavigation";
 import { MatchingResultScreenProps } from "../types";
 import { handleButtonPress } from "../utils";
+import { COLORS, SIZES, SPACING, LAYOUT } from "../constants";
 
 /**
  * 매칭 결과 스크린 컴포넌트
