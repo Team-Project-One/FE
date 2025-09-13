@@ -1,6 +1,6 @@
 import React from "react";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import MainScreen from "./components/MainScreen";
+import MainScreen from "./screens/MainScreen";
 
 /**
  * 최상위 루트 컴포넌트

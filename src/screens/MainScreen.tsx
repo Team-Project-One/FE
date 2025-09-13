@@ -2,8 +2,9 @@ import React from "react";
 import { StyleSheet, Text, View, ScrollView } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
-import ButtonView from "./ButtonView";
+import ButtonView from "../components/ButtonView";
 import { MainScreenProps } from "../types";
+import { handleButtonPress } from "../utils";
 
 /**
  * 앱의 메인 화면을 구성하는 컴포넌트
@@ -34,7 +35,7 @@ const MainScreen: React.FC<MainScreenProps> = () => {
       <View style={[styles.buttonContainer, { bottom: insets.bottom + 120 }]}>
         <ButtonView
           title="매칭하기"
-          onPress={() => console.log("매칭 버튼 눌림")}
+          onPress={() => handleButtonPress("매칭")}
           buttonStyle={styles.matchingButton}
           textStyle={styles.matchingButtonText}
         />
@@ -42,15 +43,9 @@ const MainScreen: React.FC<MainScreenProps> = () => {
 
       {/* 푸터 영역 */}
       <View style={[styles.footer, { paddingBottom: insets.bottom }]}>
-        <ButtonView
-          title="친구"
-          onPress={() => console.log("친구 버튼 눌림")}
-        />
-        <ButtonView title="홈" onPress={() => console.log("홈 버튼 눌림")} />
-        <ButtonView
-          title="마이"
-          onPress={() => console.log("마이 버튼 눌림")}
-        />
+        <ButtonView title="친구" onPress={() => handleButtonPress("친구")} />
+        <ButtonView title="홈" onPress={() => handleButtonPress("홈")} />
+        <ButtonView title="마이" onPress={() => handleButtonPress("마이")} />
       </View>
     </View>
   );
