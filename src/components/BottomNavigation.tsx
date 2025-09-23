@@ -16,7 +16,12 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({ onNavigate }) => {
     <View
       style={[
         styles.bottomNav,
-        { paddingBottom: insets.bottom + LAYOUT.safeAreaBottom },
+        {
+          paddingBottom: Math.max(insets.bottom, LAYOUT.safeAreaBottom),
+          minHeight:
+            SIZES.bottomNavHeight +
+            Math.max(insets.bottom, LAYOUT.safeAreaBottom),
+        },
       ]}
     >
       <ButtonView
@@ -43,11 +48,12 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({ onNavigate }) => {
 
 const styles = StyleSheet.create({
   bottomNav: {
-    height: SIZES.bottomNavHeight,
     flexDirection: "row",
     backgroundColor: COLORS.lightGray,
     borderTopWidth: 1,
     borderTopColor: COLORS.border,
+    justifyContent: "space-around",
+    alignItems: "center",
   },
   navButton: {
     flex: 1,
