@@ -17,7 +17,7 @@ const MainScreen: React.FC<MainScreenProps> = ({ onNavigate }) => {
   const insets = useSafeAreaInsets();
 
   return (
-    <View style={styles.backgroundColorContainer}>
+    <View style={styles.container}>
       <StatusBar style="auto" />
 
       {/* 헤더 영역 */}
@@ -47,9 +47,9 @@ const MainScreen: React.FC<MainScreenProps> = ({ onNavigate }) => {
 };
 
 const styles = StyleSheet.create({
-  backgroundColorContainer: {
+  container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: COLORS.white,
   },
   content: {
     flexGrow: 1,
