@@ -6,12 +6,12 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
-  Image,
 } from "react-native";
 import ButtonView from "../components/ButtonView";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { BaseScreenProps } from "../types";
+import BackSvg from "../../assets/back.svg";
 
 const Chip = ({
   label,
@@ -55,11 +55,7 @@ const ProfileEditScreen: React.FC<BaseScreenProps> = ({ onNavigate }) => {
           onPress={() => onNavigate("mypage")}
           style={styles.backButton}
         >
-          <Image
-            source={require("../../assets/back.svg")}
-            style={styles.backButtonImage}
-            resizeMode="contain"
-          />
+          <BackSvg width={24} height={24} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>프로필 수정</Text>
         <View style={styles.placeholder} />
@@ -219,7 +215,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  backButtonImage: { width: 24, height: 24 },
   headerTitle: { fontSize: 20, fontWeight: "700", color: "#1F2937" },
   placeholder: { width: 32 },
   content: { paddingHorizontal: 16 },

@@ -2,15 +2,15 @@ import { ViewStyle, TextStyle } from "react-native";
 
 // ===== 공통 타입 정의 =====
 export type Screen =
-  | "main"
+  | "signupLanding"
+  | "signupLogin"
+  | "signupBasic"
+  | "signupDetailed"
+  | "signupSelfIntro"
+  | "signupProfile"
+  | "home"
   | "mypage"
-  | "chat"
-  | "chatDetail"
-  | "matchingResult"
-  | "settings"
-  | "profileEdit"
-  | "terms"
-  | "privacy";
+  | "matchingResult";
 
 export type NavigationHandler = (screen: Screen, extraData?: any) => void;
 
@@ -47,6 +47,14 @@ export interface ChatDetailScreenProps extends BaseScreenProps {
 export interface MatchingResultScreenProps extends BaseScreenProps {}
 export interface SettingsScreenProps extends BaseScreenProps {}
 
+// ===== 회원가입 플로우 스크린 Props =====
+export interface SignupLandingScreenProps extends BaseScreenProps {}
+export interface SignupLoginScreenProps extends BaseScreenProps {}
+export interface SignupBasicScreenProps extends BaseScreenProps {}
+export interface SignupDetailedScreenProps extends BaseScreenProps {}
+export interface SignupSelfIntroScreenProps extends BaseScreenProps {}
+export interface SignupProfileScreenProps extends BaseScreenProps {}
+
 // ===== 폼 데이터 타입 (기존 유지) =====
 export interface SignupBasicFormData {
   name: string;
@@ -55,12 +63,14 @@ export interface SignupBasicFormData {
 }
 
 export interface SignupDetailedFormData {
+  job: string;
+  region: string;
   drinkingFrequency: string;
   smokingStatus: string;
   height: string;
   pets: string;
   religion: string;
-  childrenPlan: string;
+  contactFrequency: string;
   mbti: string;
 }
 
