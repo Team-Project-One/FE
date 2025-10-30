@@ -192,31 +192,17 @@ const SignupSelfIntroScreen: React.FC<SignupSelfIntroScreenProps> = ({
             { paddingBottom: insets.bottom + 20 },
           ]}
         >
-          <LinearGradient
-            colors={["#EC4899", "#F43F5E"]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={styles.gradientButton}
-          >
-            <ButtonView
-              title="다음"
-              onPress={handleNext}
-              buttonStyle={styles.nextButton}
-              textStyle={styles.nextButtonText}
-            />
-          </LinearGradient>
+          <ButtonView title="다음" onPress={handleNext} />
+          <TouchableOpacity onPress={() => onNavigate("main")} style={{ alignSelf: "center" }}>
+            <Text style={{ color: "#6B7280" }}>메인으로</Text>
+          </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.skipButton}
             activeOpacity={0.8}
             onPress={() => onNavigate("signupProfile")}
           >
-            <GradientText
-              text="건너뛰기"
-              width={300}
-              height={26}
-              fontSize={16}
-            />
+            <GradientText text="건너뛰기" width={300} height={26} fontSize={16} />
           </TouchableOpacity>
         </View>
 
@@ -298,13 +284,12 @@ const styles = StyleSheet.create({
   },
   tipItem: { marginTop: 4 },
   tipText: { fontSize: 13, color: "#6B7280" },
-  buttonContainer: { paddingHorizontal: 20, gap: 12 },
-  gradientButton: {
-    width: 346,
-    height: 64,
-    borderRadius: 14,
-    overflow: "hidden",
+  buttonContainer: {
+    paddingHorizontal: 20,
+    gap: 12,
     alignSelf: "center",
+    width: "100%",
+    maxWidth: 480,
   },
   nextButton: {
     backgroundColor: "transparent",
@@ -323,7 +308,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   skipButton: {
-    width: 346,
+    width: "100%",
     height: 64,
     alignItems: "center",
     justifyContent: "center",

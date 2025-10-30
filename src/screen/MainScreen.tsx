@@ -13,7 +13,7 @@ import { MainScreenProps } from "../types";
 import BottomNavigation from "../components/BottomNavigation";
 import ButtonView from "../components/ButtonView";
 import DivineIcon from "../../assets/divine.svg";
-import FortuneCookieIcon from "../../assets/fortuneCookie.svg";
+import FortuneCookieIcon from "../../assets/fortune-cookie.svg";
 import SirenIcon from "../../assets/siren.svg";
 
 const fortuneTexts = {
@@ -91,19 +91,10 @@ const MainScreen: React.FC<MainScreenProps> = ({ onNavigate }) => {
         <View style={{ width: 120, height: 40 }}>
           <DivineIcon width={120} height={40} />
         </View>
-        <TouchableOpacity
-          onPress={handleFortuneClick}
-          style={styles.cookieButton}
-        >
-          {Platform.OS === "web" ? (
-            <View style={{ width: 40, height: 40, position: "relative" }}>
-              <FortuneCookieIcon width={40} height={40} opacity={1} />
-            </View>
-          ) : (
-            <View style={{ width: 40, height: 40 }}>
-              <FortuneCookieIcon width={40} height={40} />
-            </View>
-          )}
+        <TouchableOpacity onPress={handleFortuneClick} style={styles.cookieButton}>
+          <View style={{ width: 40, height: 40 }}>
+            <FortuneCookieIcon width={40} height={40} />
+          </View>
         </TouchableOpacity>
       </View>
 

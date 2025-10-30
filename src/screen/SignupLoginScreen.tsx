@@ -10,6 +10,7 @@ import { StatusBar } from "expo-status-bar";
 import { LinearGradient } from "expo-linear-gradient";
 import { SignupLoginScreenProps } from "../types";
 import DivineLogoSvg from "../../assets/divine.svg";
+import KakaoLoginSvg from "../../assets/kakao-login.svg";
 
 /**
  * 카카오 로그인 화면
@@ -46,12 +47,8 @@ const SignupLoginScreen: React.FC<SignupLoginScreenProps> = ({
         </View>
 
         <View style={styles.buttonContainer}>
-          <TouchableOpacity
-            onPress={handleKakaoLogin}
-            activeOpacity={0.9}
-            style={styles.kakaoButton}
-          >
-            <Text style={styles.kakaoButtonText}>카카오로 시작하기</Text>
+          <TouchableOpacity onPress={handleKakaoLogin} activeOpacity={0.9}>
+            <KakaoLoginSvg width={SCREEN_WIDTH - 40} height={52} />
           </TouchableOpacity>
         </View>
       </View>
@@ -94,19 +91,8 @@ const styles = StyleSheet.create({
     width: "100%",
     alignItems: "center",
   },
-  kakaoButton: {
-    width: SCREEN_WIDTH - 40,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#FEE500",
-    borderRadius: 8,
-    paddingVertical: 14,
-  },
-  kakaoButtonText: {
-    color: "#191919",
-    fontSize: 16,
-    fontWeight: "700",
-  },
+  kakaoButton: {},
+  kakaoButtonText: {},
 });
 
 export default SignupLoginScreen;

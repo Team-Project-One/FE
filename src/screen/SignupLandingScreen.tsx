@@ -11,7 +11,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import ButtonView from "../components/ButtonView";
 import { SignupLandingScreenProps } from "../types";
-import { LinearGradient } from "expo-linear-gradient";
 import DivineLogoSvg from "../../assets/divine.svg";
 
 const { width, height } = Dimensions.get("window");
@@ -108,23 +107,11 @@ const styles = StyleSheet.create({
   },
   buttonContainer: {
     paddingHorizontal: 20,
-  },
-  gradientButton: {
-    borderRadius: 12,
-    overflow: "hidden",
-  },
-  startButton: {
-    backgroundColor: "transparent",
-    paddingVertical: 18,
-    paddingHorizontal: 20,
+    alignSelf: "center",
     width: "100%",
+    maxWidth: 480,
   },
-  startButtonText: {
-    color: "#FFFFFF",
-    fontSize: 18,
-    fontWeight: "bold",
-    textAlign: "center",
-  },
+  
 });
 
 const DivineLogo = () => (
@@ -370,19 +357,10 @@ const SignupLandingScreen: React.FC<SignupLandingScreenProps> = ({
             { paddingBottom: insets.bottom + 20 },
           ]}
         >
-          <LinearGradient
-            colors={["#ec4899", "#f43f5e"]}
-            style={styles.gradientButton}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-          >
-            <ButtonView
-              title="운명 해독 시작하기"
-              onPress={() => onNavigate("signupLogin")}
-              buttonStyle={styles.startButton}
-              textStyle={styles.startButtonText}
-            />
-          </LinearGradient>
+          <ButtonView
+            title="운명 해독 시작하기"
+            onPress={() => onNavigate("signupLogin")}
+          />
         </View>
       </View>
     </View>
