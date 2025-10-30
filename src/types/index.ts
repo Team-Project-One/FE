@@ -2,14 +2,17 @@ import { ViewStyle, TextStyle } from "react-native";
 
 // ===== 공통 타입 정의 =====
 export type Screen =
-  | "signupLanding"
-  | "signupBasic"
-  | "signupDetailed"
-  | "home"
+  | "main"
   | "mypage"
-  | "matchingResult";
+  | "chat"
+  | "chatDetail"
+  | "matchingResult"
+  | "settings"
+  | "profileEdit"
+  | "terms"
+  | "privacy";
 
-export type NavigationHandler = (screen: Screen) => void;
+export type NavigationHandler = (screen: Screen, extraData?: any) => void;
 
 // ===== 컴포넌트 Props 타입 =====
 export interface ButtonViewProps {
@@ -25,6 +28,7 @@ export interface AppHeaderProps {
 
 export interface BottomNavigationProps {
   onNavigate: NavigationHandler;
+  currentScreen: Screen;
 }
 
 // ===== 스크린 Props 타입 (공통 패턴) =====
@@ -35,12 +39,15 @@ export interface BaseScreenProps {
 // 개별 스크린 Props는 BaseScreenProps를 확장
 export interface MainScreenProps extends BaseScreenProps {}
 export interface MyScreenProps extends BaseScreenProps {}
+export interface ChatScreenProps extends BaseScreenProps {}
+export interface ChatDetailScreenProps extends BaseScreenProps {
+  chatName?: string;
+  chatAge?: number;
+}
 export interface MatchingResultScreenProps extends BaseScreenProps {}
-export interface SignupLandingScreenProps extends BaseScreenProps {}
-export interface SignupBasicScreenProps extends BaseScreenProps {}
-export interface SignupDetailedScreenProps extends BaseScreenProps {}
+export interface SettingsScreenProps extends BaseScreenProps {}
 
-// ===== 폼 데이터 타입 =====
+// ===== 폼 데이터 타입 (기존 유지) =====
 export interface SignupBasicFormData {
   name: string;
   birthDate: string;
