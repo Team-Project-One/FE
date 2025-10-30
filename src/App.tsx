@@ -1,8 +1,11 @@
 import React, { useState } from "react";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import SignupLandingScreen from "./screen/SignupLandingScreen";
+import SignupLoginScreen from "./screen/SignupLoginScreen";
 import SignupBasicScreen from "./screen/SignupBasicScreen";
 import SignupDetailedScreen from "./screen/SignupDetailedScreen";
+import SignupSelfIntroScreen from "./screen/SignupSelfIntroScreen";
+import SignupProfileScreen from "./screen/SignupProfileScreen";
 import MainScreen from "./screen/MainScreen";
 import MyScreen from "./screen/MyScreen";
 import MatchingResultScreen from "./screen/MatchingResultScreen";
@@ -23,10 +26,16 @@ const App: React.FC = () => {
     switch (currentScreen) {
       case "signupLanding":
         return <SignupLandingScreen onNavigate={handleNavigation} />;
+      case "signupLogin":
+        return <SignupLoginScreen onNavigate={handleNavigation} />;
       case "signupBasic":
         return <SignupBasicScreen onNavigate={handleNavigation} />;
       case "signupDetailed":
         return <SignupDetailedScreen onNavigate={handleNavigation} />;
+      case "signupSelfIntro":
+        return <SignupSelfIntroScreen onNavigate={handleNavigation} />;
+      case "signupProfile":
+        return <SignupProfileScreen onNavigate={handleNavigation} />;
       case "home":
         return <MainScreen onNavigate={handleNavigation} />;
       case "mypage":

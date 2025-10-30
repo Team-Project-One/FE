@@ -3,8 +3,11 @@ import { ViewStyle, TextStyle } from "react-native";
 // ===== 공통 타입 정의 =====
 export type Screen =
   | "signupLanding"
+  | "signupLogin"
   | "signupBasic"
   | "signupDetailed"
+  | "signupSelfIntro"
+  | "signupProfile"
   | "home"
   | "mypage"
   | "matchingResult";
@@ -37,8 +40,11 @@ export interface MainScreenProps extends BaseScreenProps {}
 export interface MyScreenProps extends BaseScreenProps {}
 export interface MatchingResultScreenProps extends BaseScreenProps {}
 export interface SignupLandingScreenProps extends BaseScreenProps {}
+export interface SignupLoginScreenProps extends BaseScreenProps {}
 export interface SignupBasicScreenProps extends BaseScreenProps {}
 export interface SignupDetailedScreenProps extends BaseScreenProps {}
+export interface SignupSelfIntroScreenProps extends BaseScreenProps {}
+export interface SignupProfileScreenProps extends BaseScreenProps {}
 
 // ===== 폼 데이터 타입 =====
 export interface SignupBasicFormData {
@@ -48,12 +54,14 @@ export interface SignupBasicFormData {
 }
 
 export interface SignupDetailedFormData {
+  job: string;
+  region: string;
   drinkingFrequency: string;
   smokingStatus: string;
   height: string;
   pets: string;
   religion: string;
-  childrenPlan: string;
+  contactFrequency: string;
   mbti: string;
 }
 
