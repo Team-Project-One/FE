@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import "./theme/global.css";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { Text, TextInput } from "react-native";
 import {

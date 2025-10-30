@@ -8,19 +8,20 @@ export type Screen =
   | "signupDetailed"
   | "signupSelfIntro"
   | "signupProfile"
+  | "main"
   | "home"
   | "mypage"
-  | "matchingResult";
+  | "chat"
+  | "chatDetail"
+  | "matchingResult"
+  | "settings"
+  | "profileEdit"
+  | "terms"
+  | "privacy";
 
 export type NavigationHandler = (screen: Screen, extraData?: any) => void;
 
 // ===== 컴포넌트 Props 타입 =====
-export interface ButtonViewProps {
-  title: string;
-  onPress: () => void;
-  buttonStyle?: ViewStyle | ViewStyle[];
-  textStyle?: TextStyle | TextStyle[];
-}
 
 export interface AppHeaderProps {
   title: string;

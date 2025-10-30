@@ -850,19 +850,10 @@ const SignupDetailedScreen: React.FC<SignupDetailedScreenProps> = ({
                 { paddingBottom: insets.bottom + 20 },
               ]}
             >
-              <LinearGradient
-                colors={["#EC4899", "#F43F5E"]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.gradientButton}
-              >
-                <ButtonView
-                  title="다음"
-                  onPress={handleComplete}
-                  buttonStyle={styles.nextButton}
-                  textStyle={styles.nextButtonText}
-                />
-              </LinearGradient>
+              <ButtonView title="다음" onPress={handleComplete} />
+              <TouchableOpacity onPress={() => onNavigate("main")} style={{ marginTop: 12, alignSelf: "center" }}>
+                <Text style={{ color: "#6B7280" }}>메인으로</Text>
+              </TouchableOpacity>
             </View>
 
             {/* 하단 안내 문구 */}
@@ -1076,30 +1067,11 @@ const styles = StyleSheet.create({
   },
   buttonContainer: {
     paddingHorizontal: 20,
-  },
-  gradientButton: {
-    width: 346,
-    height: 64,
-    borderRadius: 14,
-    overflow: "hidden",
     alignSelf: "center",
-  },
-  nextButton: {
-    backgroundColor: "transparent",
-    paddingVertical: 0,
-    paddingHorizontal: 20,
-    borderRadius: 14,
     width: "100%",
-    height: "100%",
-    justifyContent: "center",
-    alignItems: "center",
+    maxWidth: 480,
   },
-  nextButtonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "bold",
-    textAlign: "center",
-  },
+  
   bottomSpacing: {
     height: 40,
   },

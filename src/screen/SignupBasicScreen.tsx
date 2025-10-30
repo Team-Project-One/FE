@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   StyleSheet,
   Text,
@@ -12,11 +12,11 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { LinearGradient } from "expo-linear-gradient";
 import ButtonView from "../components/ButtonView";
+import ErrorBanner from "../components/ErrorBanner";
+import GenderSelector from "../components/GenderSelector";
+import { colors, typography } from "../theme/tokens";
 import { SignupBasicScreenProps, SignupBasicFormData } from "../types";
-import AlertSvg from "../../assets/alert.svg";
 import BackwardSvg from "../../assets/back.svg";
-import MaleSvg from "../../assets/male.svg";
-import FemaleSvg from "../../assets/femaleIcon.svg";
 
 /**
  * 기본 정보 입력 화면 (1/4단계)
@@ -34,6 +34,9 @@ const SignupBasicScreen: React.FC<SignupBasicScreenProps> = ({
   const [showErrorBanner, setShowErrorBanner] = useState(false);
   const [progressAnimation] = useState(new Animated.Value(0));
   const [errorBannerAnimation] = useState(new Animated.Value(0));
+  const errorHideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
 
   useEffect(() => {
     Animated.timing(progressAnimation, {
@@ -104,7 +107,10 @@ const SignupBasicScreen: React.FC<SignupBasicScreenProps> = ({
       duration: 300,
       useNativeDriver: true,
     }).start();
-    setTimeout(() => {
+    if (errorHideTimeoutRef.current) {
+      clearTimeout(errorHideTimeoutRef.current);
+    }
+    errorHideTimeoutRef.current = setTimeout(() => {
       Animated.timing(errorBannerAnimation, {
         toValue: 0,
         duration: 300,
@@ -114,6 +120,14 @@ const SignupBasicScreen: React.FC<SignupBasicScreenProps> = ({
       });
     }, 3000);
   };
+
+  useEffect(() => {
+    return () => {
+      if (errorHideTimeoutRef.current) {
+        clearTimeout(errorHideTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleNext = () => {
     if (validateForm()) onNavigate("signupDetailed");
@@ -139,28 +153,12 @@ const SignupBasicScreen: React.FC<SignupBasicScreenProps> = ({
       >
         <StatusBar style="auto" />
 
-        {showErrorBanner && (
-          <Animated.View
-            style={[
-              styles.errorBanner,
-              {
-                top: insets.top + 15.99,
-                opacity: errorBannerAnimation,
-                transform: [
-                  {
-                    translateY: errorBannerAnimation.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [-50, 0],
-                    }),
-                  },
-                ],
-              },
-            ]}
-          >
-            <AlertSvg width={20} height={20} style={{ marginRight: 8 }} />
-            <Text style={styles.errorBannerText}>{getErrorMessage()}</Text>
-          </Animated.View>
-        )}
+        <ErrorBanner
+          message={getErrorMessage()}
+          visible={showErrorBanner}
+          top={insets.top + 16}
+          onHidden={() => setShowErrorBanner(false)}
+        />
 
         <View style={[styles.progressHeader, { paddingTop: insets.top + 20 }]}>
           <View style={styles.progressBarContainer}>
@@ -211,7 +209,7 @@ const SignupBasicScreen: React.FC<SignupBasicScreenProps> = ({
                 value={formData.name}
                 onChangeText={(v) => handleInputChange("name", v)}
                 placeholder="이름을 입력하세요"
-                placeholderTextColor="#999"
+                placeholderTextColor={colors.gray[600]}
               />
             </View>
 
@@ -225,7 +223,7 @@ const SignupBasicScreen: React.FC<SignupBasicScreenProps> = ({
                 value={formData.birthDate}
                 onChangeText={handleBirthDateChange}
                 placeholder="YYYY-MM-DD"
-                placeholderTextColor="#999"
+                placeholderTextColor={colors.gray[600]}
                 keyboardType="numeric"
                 maxLength={10}
               />
@@ -236,64 +234,11 @@ const SignupBasicScreen: React.FC<SignupBasicScreenProps> = ({
 
             <View style={styles.inputGroup}>
               <Text style={styles.label}>성별</Text>
-              <View style={styles.genderContainer}>
-                <TouchableOpacity
-                  onPress={() => handleGenderChange("남성")}
-                  style={[
-                    styles.genderButton,
-                    formData.gender === "남성" &&
-                      styles.genderButtonSelectedMale,
-                    errors.gender &&
-                      formData.gender !== "남성" &&
-                      styles.genderButtonError,
-                  ]}
-                >
-                  <View style={styles.genderButtonContent}>
-                    <MaleSvg
-                      width={20}
-                      height={20}
-                      style={{ marginRight: 8 }}
-                    />
-                    <Text
-                      style={[
-                        styles.genderButtonText,
-                        formData.gender === "남성" &&
-                          styles.genderButtonTextSelectedMale,
-                      ]}
-                    >
-                      남성
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={() => handleGenderChange("여성")}
-                  style={[
-                    styles.genderButton,
-                    formData.gender === "여성" &&
-                      styles.genderButtonSelectedFemale,
-                    errors.gender &&
-                      formData.gender !== "여성" &&
-                      styles.genderButtonError,
-                  ]}
-                >
-                  <View style={styles.genderButtonContent}>
-                    <FemaleSvg
-                      width={20}
-                      height={20}
-                      style={{ marginRight: 8 }}
-                    />
-                    <Text
-                      style={[
-                        styles.genderButtonText,
-                        formData.gender === "여성" &&
-                          styles.genderButtonTextSelectedFemale,
-                      ]}
-                    >
-                      여성
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-              </View>
+              <GenderSelector
+                value={formData.gender}
+                onChange={handleGenderChange}
+                hasError={!!errors.gender}
+              />
             </View>
           </View>
         </ScrollView>
@@ -304,19 +249,13 @@ const SignupBasicScreen: React.FC<SignupBasicScreenProps> = ({
             { paddingBottom: insets.bottom + 20 },
           ]}
         >
-          <LinearGradient
-            colors={["#EC4899", "#F43F5E"]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={styles.gradientButton}
+          <ButtonView title="다음" onPress={handleNext} />
+          <TouchableOpacity
+            onPress={() => onNavigate("main")}
+            style={{ marginTop: 12, alignSelf: "center" }}
           >
-            <ButtonView
-              title="다음"
-              onPress={handleNext}
-              buttonStyle={styles.nextButton}
-              textStyle={styles.nextButtonText}
-            />
-          </LinearGradient>
+            <Text style={{ color: colors.gray[600] }}>메인으로</Text>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.disclaimerContainer}>
@@ -380,7 +319,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  stepText: { fontSize: 16, fontWeight: "500", color: "#333333" },
+  stepText: {
+    ...typography.body16r,
+    fontWeight: "500",
+    color: colors.gray[100],
+  },
   placeholder: { width: 40 },
   titleContainer: {
     paddingHorizontal: 20,
@@ -388,25 +331,29 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   headerTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#333333",
+    ...typography.body24b,
+    color: colors.gray[100],
     textAlign: "center",
   },
   content: { flexGrow: 1, padding: 20 },
   formContainer: { gap: 30 },
   inputGroup: { gap: 12 },
-  label: { fontSize: 18, fontWeight: "600", color: "#333333", marginBottom: 4 },
+  label: {
+    ...typography.body18r,
+    fontWeight: "600",
+    color: colors.gray[100],
+    marginBottom: 4,
+  },
   nameInput: {
     borderTopWidth: 1.35,
-    borderTopColor: "#9CA3AF",
+    borderTopColor: colors.gray[500],
     borderWidth: 1.35,
-    borderColor: "#9CA3AF",
+    borderColor: colors.gray[500],
     borderRadius: 12,
     paddingHorizontal: 20,
     paddingVertical: 16,
     fontSize: 18,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.white.base,
     width: "100%",
     height: 60,
     shadowColor: "#000",
@@ -417,14 +364,14 @@ const styles = StyleSheet.create({
   },
   birthDateInput: {
     borderTopWidth: 1.35,
-    borderTopColor: "#9CA3AF",
+    borderTopColor: colors.gray[500],
     borderWidth: 1.35,
-    borderColor: "#9CA3AF",
+    borderColor: colors.gray[500],
     borderRadius: 12,
     paddingHorizontal: 20,
     paddingVertical: 16,
     fontSize: 18,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.white.base,
     width: "100%",
     height: 60,
     shadowColor: "#000",
@@ -433,43 +380,50 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
   },
-  inputError: { borderWidth: 1.35, borderColor: "#FB2C36" },
-  descriptionText: { fontSize: 12, color: "#6B7280" },
+  inputError: { borderWidth: 1.35, borderColor: colors.rose[500] },
+  descriptionText: { fontSize: 12, color: colors.gray[600] },
   genderContainer: { flexDirection: "row", gap: 10 },
   genderButton: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.white.base,
     borderTopWidth: 1.35,
-    borderTopColor: "#9CA3AF",
+    borderTopColor: colors.gray[500],
     borderWidth: 1.35,
-    borderColor: "#9CA3AF",
+    borderColor: colors.gray[500],
     padding: 18,
     borderRadius: 10,
-    width: 166,
     height: 60,
   },
   genderButtonSelectedMale: {
-    backgroundColor: "#EFF6FF",
+    backgroundColor: colors.gray[900],
     borderWidth: 1.35,
-    borderColor: "#3B82F6",
+    borderColor: colors.gray[800],
   },
   genderButtonSelectedFemale: {
-    backgroundColor: "#FDF2F8",
+    backgroundColor: colors.pink[50],
     borderWidth: 1.35,
-    borderColor: "#EC4899",
+    borderColor: colors.pink[500],
   },
-  genderButtonError: { borderWidth: 1.35, borderColor: "#FB2C36" },
+  genderButtonError: { borderWidth: 1.35, borderColor: colors.rose[500] },
   genderButtonContent: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
   },
-  genderButtonText: { color: "#666666" },
-  genderButtonTextSelectedMale: { color: "#3B82F6", fontWeight: "500" },
-  genderButtonTextSelectedFemale: { color: "#EC4899", fontWeight: "500" },
-  buttonContainer: { paddingHorizontal: 20 },
+  genderButtonText: { color: colors.gray[600] },
+  genderButtonTextSelectedMale: { color: colors.gray[100], fontWeight: "500" },
+  genderButtonTextSelectedFemale: {
+    color: colors.pink[500],
+    fontWeight: "500",
+  },
+  buttonContainer: {
+    paddingHorizontal: 20,
+    alignSelf: "center",
+    width: "100%",
+    maxWidth: 480,
+  },
   gradientButton: {
-    width: 346,
+    width: "100%",
     height: 64,
     borderRadius: 14,
     overflow: "hidden",
@@ -486,7 +440,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   nextButtonText: {
-    color: "#FFFFFF",
+    color: colors.white.base,
     fontSize: 16,
     fontWeight: "bold",
     textAlign: "center",
@@ -497,7 +451,11 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     alignItems: "center",
   },
-  disclaimerText: { fontSize: 12, color: "#6B7280", textAlign: "center" },
+  disclaimerText: {
+    fontSize: 12,
+    color: colors.gray[600],
+    textAlign: "center",
+  },
 });
 
 export default SignupBasicScreen;

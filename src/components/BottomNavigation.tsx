@@ -26,7 +26,7 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
   };
 
   return (
-    <View style={[styles.bottomNav, { paddingBottom: insets.bottom + 8 }]}>
+    <View style={[styles.bottomNav, { paddingBottom: insets.bottom }]}>
       <TouchableOpacity
         style={[
           styles.navButton,
@@ -34,7 +34,11 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
         ]}
         onPress={() => handleNavigation("chat", "chat")}
       >
-        <ChatIcon width={24} height={24} />
+        <ChatIcon
+          width={24}
+          height={24}
+          color={activeTab === "chat" ? "#EC4899" : "#9CA3AF"}
+        />
         <Text
           style={[
             styles.navButtonText,
@@ -51,7 +55,11 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
         ]}
         onPress={() => handleNavigation("main", "main")}
       >
-        <HomeIcon width={24} height={24} />
+        <HomeIcon
+          width={24}
+          height={24}
+          color={activeTab === "main" ? "#EC4899" : "#9CA3AF"}
+        />
         <Text
           style={[
             styles.navButtonText,
@@ -68,7 +76,11 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
         ]}
         onPress={() => handleNavigation("mypage", "mypage")}
       >
-        <MyIcon width={24} height={24} />
+        <MyIcon
+          width={24}
+          height={24}
+          color={activeTab === "mypage" ? "#EC4899" : "#9CA3AF"}
+        />
         <Text
           style={[
             styles.navButtonText,
@@ -84,12 +96,12 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
 
 const styles = StyleSheet.create({
   bottomNav: {
-    height: 60,
+    height: 90,
     flexDirection: "row",
     backgroundColor: "#FFFFFF",
     borderTopWidth: 1,
     borderTopColor: "#E5E7EB",
-    paddingTop: 8,
+    paddingTop: 16,
   },
   navButton: {
     flex: 1,

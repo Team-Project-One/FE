@@ -177,19 +177,10 @@ const SignupProfileScreen: React.FC<SignupProfileScreenProps> = ({
             { paddingBottom: insets.bottom + 20 },
           ]}
         >
-          <LinearGradient
-            colors={["#EC4899", "#F43F5E"]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={styles.gradientButton}
-          >
-            <ButtonView
-              title="가입 완료"
-              onPress={handleComplete}
-              buttonStyle={styles.completeButton}
-              textStyle={styles.completeButtonText}
-            />
-          </LinearGradient>
+          <ButtonView title="가입 완료" onPress={handleComplete} />
+          <TouchableOpacity onPress={() => onNavigate("main")} style={{ alignSelf: "center" }}>
+            <Text style={{ color: "#6B7280" }}>메인으로</Text>
+          </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.skipButton}
@@ -349,32 +340,13 @@ const styles = StyleSheet.create({
   buttonContainer: {
     paddingHorizontal: 20,
     gap: 12,
-  },
-  gradientButton: {
-    width: 346,
-    height: 64,
-    borderRadius: 14,
-    overflow: "hidden",
     alignSelf: "center",
-  },
-  completeButton: {
-    backgroundColor: "transparent",
-    paddingVertical: 0,
-    paddingHorizontal: 20,
-    borderRadius: 14,
     width: "100%",
-    height: "100%",
-    justifyContent: "center",
-    alignItems: "center",
+    maxWidth: 480,
   },
-  completeButtonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "bold",
-    textAlign: "center",
-  },
+  
   skipButton: {
-    width: 346,
+    width: "100%",
     height: 64,
     alignItems: "center",
     justifyContent: "center",
