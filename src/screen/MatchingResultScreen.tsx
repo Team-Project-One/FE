@@ -1,85 +1,172 @@
 import React from "react";
-import { StyleSheet, Text, View, ScrollView } from "react-native";
+import {
+  StyleSheet,
+  Text,
+  View,
+  ScrollView,
+  TouchableOpacity,
+  Image,
+} from "react-native";
+import BackIcon from "../../assets/back.svg";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
-import ButtonView from "../components/ButtonView";
-import AppHeader from "../components/AppHeader";
-import BottomNavigation from "../components/BottomNavigation";
 import { MatchingResultScreenProps } from "../types";
-import { handleButtonPress } from "../utils";
+import BottomNavigation from "../components/BottomNavigation";
+import ButtonView from "../components/ButtonView";
 
-/**
- * 매칭 결과 스크린 컴포넌트
- * 매칭된 상대의 정보와 액션 버튼들을 표시
- */
+// 샘플 매칭 데이터
+const mockMatchData = {
+  name: "지은",
+  age: 26,
+  gender: "female",
+  job: "디자이너",
+  location: "강남구",
+  originalScore: 85.123,
+  finalScore: 92.456,
+  stressScore: 23.789,
+  mbti: "ENFP",
+  drinking: "가끔 마심",
+  pets: "고양이",
+  profileImage:
+    "https://images.unsplash.com/photo-1708000609854-72c89a2fb689?crop=entropy&cs=tinysrgb&fit=max&fm=jpg",
+  selfIntroduction:
+    "안녕하세요! 따뜻한 사람과 진솔한 대화를 나누며 함께 성장하는 관계를 원합니다. 영화와 카페 투어를 좋아하고, 주말에는 요리하는 것을 즐겨요.",
+};
+
 const MatchingResultScreen: React.FC<MatchingResultScreenProps> = ({
   onNavigate,
 }) => {
+  const insets = useSafeAreaInsets();
+  const profile = mockMatchData;
+  const genderIcon = profile.gender === "male" ? "♂" : "♀";
+  const genderColor = profile.gender === "male" ? "#3B82F6" : "#F54144";
+
+  const handleChat = () => {
+    onNavigate("chatDetail", { chatName: "지은", chatAge: 26 });
+  };
+
   return (
     <View style={styles.container}>
-      <StatusBar style="auto" />
+      <StatusBar style="dark" />
 
-      {/* 헤더 영역 */}
-      <AppHeader title="로고" />
+      {/* Header */}
+      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
+        <TouchableOpacity
+          onPress={() => onNavigate("main")}
+          style={styles.backButton}
+        >
+          <BackIcon width={24} height={24} />
+        </TouchableOpacity>
+        <View style={styles.headerTextContainer}>
+          <Text style={styles.headerTitle}>운명의 상대를 찾았어요!</Text>
+          <Text style={styles.headerSubtitle}>사주팔자 기반 완벽 매칭</Text>
+        </View>
+        <View style={styles.placeholder} />
+      </View>
 
-      {/* 메인 콘텐츠 영역 */}
-      <ScrollView contentContainerStyle={styles.content}>
+      {/* Content */}
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Profile Card - Pink */}
         <View style={styles.profileCard}>
-          {/* 프로필 섹션 */}
           <View style={styles.profileSection}>
             <View style={styles.profileImageContainer}>
-              <View style={styles.profileImage}>
-                <Text style={styles.profileImageText}>사진</Text>
-              </View>
+              {profile.profileImage ? (
+                <Image
+                  source={{ uri: profile.profileImage }}
+                  style={styles.profileImage}
+                />
+              ) : (
+                <View style={styles.profileImagePlaceholder}>
+                  <Text style={styles.profileEmoji}>👤</Text>
+                </View>
+              )}
             </View>
+
             <View style={styles.profileInfo}>
-              <Text style={styles.userName}>이름 (나이)</Text>
-              <Text style={styles.userDetails}>직업 • 거주지역</Text>
-              <Text style={styles.scoreText}>Original Score</Text>
-              <Text style={styles.scoreText}>Final Score</Text>
-              <Text style={styles.scoreText}>Stress Score</Text>
-            </View>
-          </View>
-
-          {/* 상세 정보 박스들 */}
-          <View style={styles.detailsSection}>
-            <View style={styles.detailsRow}>
-              <View style={styles.detailBox}>
-                <Text style={styles.detailText}>MBTI</Text>
+              <View style={styles.nameRow}>
+                <Text style={styles.userName}>
+                  {profile.name}({profile.age}){" "}
+                </Text>
+                <Text style={[styles.genderIcon, { color: genderColor }]}>
+                  {genderIcon}
+                </Text>
               </View>
-              <View style={styles.detailBox}>
-                <Text style={styles.detailText}>주량</Text>
+              <Text style={styles.userDetails}>
+                {profile.job} • {profile.location}
+              </Text>
+
+              {/* Scores */}
+              <View style={styles.scoresContainer}>
+                <View style={styles.scoreRow}>
+                  <Text style={styles.scoreLabel}>Original Score</Text>
+                  <Text style={styles.scoreValueRed}>
+                    {profile.originalScore.toFixed(3)}
+                  </Text>
+                </View>
+                <View style={styles.scoreRow}>
+                  <Text style={styles.scoreLabel}>Final Score</Text>
+                  <Text style={styles.scoreValueRed}>
+                    {profile.finalScore.toFixed(3)}
+                  </Text>
+                </View>
+                <View style={styles.scoreRow}>
+                  <Text style={styles.scoreLabel}>Stress Score</Text>
+                  <Text style={styles.scoreValueGreen}>
+                    {profile.stressScore.toFixed(3)}
+                  </Text>
+                </View>
               </View>
-            </View>
-
-            <View style={styles.wideDetailBox}>
-              <Text style={styles.detailText}>취미</Text>
-            </View>
-
-            <View style={styles.wideDetailBox}>
-              <Text style={styles.detailText}>자기소개</Text>
             </View>
           </View>
         </View>
 
-        {/* 액션 버튼들 */}
-        <View style={styles.actionButtons}>
-          <ButtonView
-            title="친구 요청 보내기"
-            onPress={() => handleButtonPress("친구 요청 보내기")}
-            buttonStyle={styles.actionButton}
-            textStyle={styles.actionButtonText}
-          />
+        {/* MBTI Section - White */}
+        <View style={styles.sectionCard}>
+          <Text style={styles.sectionTitle}>MBTI</Text>
+          <View style={styles.mbtiTag}>
+            <Text style={styles.mbtiText}>{profile.mbti}</Text>
+          </View>
+        </View>
+
+        {/* Self Introduction Section - White */}
+        <View style={styles.sectionCard}>
+          <Text style={styles.sectionTitle}>자기소개</Text>
+          <Text style={styles.introText}>{profile.selfIntroduction}</Text>
+        </View>
+
+        {/* Other Info Section - White */}
+        <View style={styles.sectionCard}>
+          <Text style={styles.sectionTitle}>기타 정보</Text>
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>음주</Text>
+            <Text style={styles.infoValue}>{profile.drinking}</Text>
+          </View>
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>반려동물</Text>
+            <Text style={styles.infoValue}>{profile.pets}</Text>
+          </View>
+        </View>
+
+        {/* Action Buttons */}
+        <View style={styles.buttonContainer}>
+          <ButtonView title="채팅하기" icon="chatting" onPress={handleChat} />
+          <View style={styles.buttonSpacing} />
           <ButtonView
             title="다시 매칭하기"
-            onPress={() => handleButtonPress("다시 매칭하기")}
-            buttonStyle={styles.actionButton}
-            textStyle={styles.actionButtonText}
+            icon="rematching"
+            variant="outline"
+            onPress={() => onNavigate("main")}
           />
         </View>
       </ScrollView>
 
-      {/* 하단 네비게이션 */}
-      <BottomNavigation onNavigate={onNavigate} />
+      {/* Bottom Navigation */}
+      <View style={{ paddingBottom: insets.bottom }}>
+        <BottomNavigation onNavigate={onNavigate} currentScreen={"main"} />
+      </View>
     </View>
   );
 };
@@ -89,96 +176,169 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#FFFFFF",
   },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 24,
+    paddingBottom: 12,
+  },
+  backButton: {
+    width: 32,
+    height: 32,
+  },
+  backButtonImage: {
+    width: 24,
+    height: 24,
+  },
+  headerTextContainer: {
+    flex: 1,
+    alignItems: "center",
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#1F2937",
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    color: "#6B7280",
+    marginTop: 4,
+  },
+  placeholder: {
+    width: 32,
+  },
   content: {
     flexGrow: 1,
-    padding: 20,
+    paddingHorizontal: 24,
+    paddingBottom: 120,
+    paddingTop: 20,
   },
   profileCard: {
-    backgroundColor: "#F8F8F8",
-    borderRadius: 12,
+    backgroundColor: "#FDF2F8",
+    borderRadius: 16,
     padding: 20,
-    marginBottom: 20,
+    marginBottom: 12,
   },
   profileSection: {
     flexDirection: "row",
-    marginBottom: 20,
   },
   profileImageContainer: {
-    marginRight: 15,
+    marginRight: 16,
   },
   profileImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: "#E0E0E0",
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+  },
+  profileImagePlaceholder: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: "#E5E7EB",
     justifyContent: "center",
     alignItems: "center",
   },
-  profileImageText: {
-    fontSize: 14,
-    color: "#666666",
+  profileEmoji: {
+    fontSize: 48,
   },
   profileInfo: {
     flex: 1,
-    justifyContent: "center",
+  },
+  nameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 4,
   },
   userName: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#333333",
-    marginBottom: 5,
+    fontSize: 22,
+    fontWeight: "700",
+    color: "#1F2937",
+  },
+  genderIcon: {
+    fontSize: 20,
   },
   userDetails: {
     fontSize: 14,
-    color: "#666666",
-    marginBottom: 10,
+    color: "#6B7280",
+    marginBottom: 12,
   },
-  scoreText: {
-    fontSize: 12,
-    color: "#888888",
-    marginBottom: 2,
+  scoresContainer: {
+    gap: 4,
   },
-  detailsSection: {
-    gap: 10,
-  },
-  detailsRow: {
+  scoreRow: {
     flexDirection: "row",
-    gap: 10,
+    justifyContent: "space-between",
   },
-  detailBox: {
-    flex: 1,
-    backgroundColor: "#E0E0E0",
-    paddingVertical: 12,
-    paddingHorizontal: 15,
-    borderRadius: 8,
-    alignItems: "center",
+  scoreLabel: {
+    fontSize: 12,
+    color: "#6B7280",
   },
-  wideDetailBox: {
-    backgroundColor: "#E0E0E0",
-    paddingVertical: 12,
-    paddingHorizontal: 15,
-    borderRadius: 8,
-    alignItems: "center",
+  scoreValue: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#1F2937",
   },
-  detailText: {
-    fontSize: 14,
-    color: "#333333",
+  scoreValueRed: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#EF4444",
   },
-  actionButtons: {
-    gap: 15,
+  scoreValueGreen: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#10B981",
   },
-  actionButton: {
-    backgroundColor: "#E0E0E0",
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    width: "100%",
+  sectionCard: {
+    backgroundColor: "#F9FAFB",
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 12,
   },
-  actionButtonText: {
-    color: "#333333",
+  sectionTitle: {
     fontSize: 16,
+    fontWeight: "700",
+    color: "#1F2937",
+    marginBottom: 12,
+  },
+  mbtiTag: {
+    backgroundColor: "#FFF0F5",
+    borderRadius: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    alignSelf: "flex-start",
+  },
+  mbtiText: {
+    fontSize: 14,
     fontWeight: "500",
-    textAlign: "center",
+    color: "#1F2937",
+  },
+  introText: {
+    fontSize: 14,
+    color: "#1F2937",
+    lineHeight: 24,
+  },
+  infoRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 8,
+  },
+  infoLabel: {
+    fontSize: 14,
+    color: "#1F2937",
+    fontWeight: "500",
+  },
+  infoValue: {
+    fontSize: 14,
+    color: "#1F2937",
+  },
+  buttonContainer: {
+    marginTop: 8,
+  },
+  buttonSpacing: {
+    height: 12,
   },
 });
 
