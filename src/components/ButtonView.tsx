@@ -17,6 +17,8 @@ export interface GradientButtonProps {
   icon?: string;
   variant?: "gradient" | "outline";
   disabled?: boolean;
+  buttonStyle?: ViewStyle | ViewStyle[];
+  textStyle?: TextStyle | TextStyle[];
 }
 
 /**
@@ -30,6 +32,8 @@ const ButtonView: React.FC<GradientButtonProps> = ({
   icon,
   variant = "gradient",
   disabled = false,
+  buttonStyle,
+  textStyle,
 }) => {
   if (variant === "outline") {
     return (
@@ -37,7 +41,11 @@ const ButtonView: React.FC<GradientButtonProps> = ({
         onPress={onPress}
         disabled={disabled}
         activeOpacity={0.7}
-        style={[styles.outlineButton, disabled && styles.disabledButton]}
+        style={[
+          styles.outlineButton,
+          disabled && styles.disabledButton,
+          buttonStyle,
+        ]}
       >
         <View style={styles.buttonContent}>
           {icon &&
@@ -48,7 +56,13 @@ const ButtonView: React.FC<GradientButtonProps> = ({
             ) : (
               <Text style={styles.outlineIcon}>{icon}</Text>
             ))}
-          <Text style={[styles.outlineText, disabled && styles.disabledText]}>
+          <Text
+            style={[
+              styles.outlineText,
+              disabled && styles.disabledText,
+              textStyle,
+            ]}
+          >
             {title}
           </Text>
         </View>
@@ -61,7 +75,7 @@ const ButtonView: React.FC<GradientButtonProps> = ({
       onPress={onPress}
       disabled={disabled}
       activeOpacity={0.9}
-      style={styles.gradientButton}
+      style={[styles.gradientButton, buttonStyle]}
     >
       <LinearGradient
         colors={disabled ? ["#D1D5DB", "#D1D5DB"] : ["#F54144", "#EC4899"]}
@@ -78,7 +92,7 @@ const ButtonView: React.FC<GradientButtonProps> = ({
             ) : (
               <Text style={styles.icon}>{icon}</Text>
             ))}
-          <Text style={styles.buttonText}>{title}</Text>
+          <Text style={[styles.buttonText, textStyle]}>{title}</Text>
         </View>
       </LinearGradient>
     </TouchableOpacity>
