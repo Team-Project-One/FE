@@ -7,34 +7,33 @@ export default StyleSheet.create({
     },
 
     content: {
-        flexGrow: 1,
         padding: 20,
         gap: 30,
     },
 
     label: {
-        ...typography.body18r,
-        fontWeight: '600',
-        color: colors.gray[100],
+        ...typography.body16r,
+        fontWeight: '400',
+        color: '#364153',
         marginBottom: 8,
     },
 
-    buttonContainer: {
+    footerContainer: {
         paddingHorizontal: 20,
-        alignSelf: 'center',
+        alignItems: 'center',
         width: '100%',
         maxWidth: 480,
+        alignSelf: 'center',
     },
 
-    disclaimerContainer: {
-        paddingHorizontal: 20,
-        paddingVertical: 10,
-        alignItems: 'center',
+    buttonContainer: {
+        width: '100%',
     },
 
     disclaimerText: {
-        fontSize: 12,
-        color: colors.gray[600],
+        fontSize: 13,
+        paddingBottom: 20,
+        color: '#6B7280',
         textAlign: 'center',
     },
 });

@@ -19,7 +19,7 @@ const BirthDateInput = ({ value, onChange, error }: any) => {
                 value={value}
                 onChangeText={(v) => onChange(formatBirthDate(v))}
                 placeholder="YYYY-MM-DD"
-                placeholderTextColor="#A3A3A3"
+                placeholderTextColor="#6B7280"
                 keyboardType="numeric"
                 maxLength={10}
             />

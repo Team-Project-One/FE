@@ -2,6 +2,8 @@ import React from 'react';
 import { View, TouchableOpacity, Text } from 'react-native';
 import { colors } from '../../theme/tokens';
 import styles from '../../styles/signup/genderStyles';
+import MaleIcon from '../../assets/male.svg';
+import FemaleIcon from '../../assets/femaleIcon.svg';
 
 interface Props {
     value: string;
@@ -25,7 +27,10 @@ const GenderSelector: React.FC<Props> = ({ value, onChange, hasError }) => {
                 onPress={() => onChange('male')}
                 activeOpacity={0.8}
             >
-                <Text style={[styles.genderButtonText, isMale && styles.genderButtonTextSelectedMale]}>남성</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <MaleIcon width={20} height={20} />
+                    <Text style={[styles.genderButtonText, isMale && styles.genderButtonTextSelectedMale]}>남성</Text>
+                </View>
             </TouchableOpacity>
 
             {/* 여성 */}
@@ -38,7 +43,12 @@ const GenderSelector: React.FC<Props> = ({ value, onChange, hasError }) => {
                 onPress={() => onChange('female')}
                 activeOpacity={0.8}
             >
-                <Text style={[styles.genderButtonText, isFemale && styles.genderButtonTextSelectedFemale]}>여성</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <FemaleIcon width={20} height={20} />
+                    <Text style={[styles.genderButtonText, isFemale && styles.genderButtonTextSelectedFemale]}>
+                        여성
+                    </Text>
+                </View>
             </TouchableOpacity>
         </View>
     );

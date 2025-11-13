@@ -19,6 +19,7 @@ export default StyleSheet.create({
         height: 60,
         justifyContent: 'center',
         alignItems: 'center',
+        paddingRight: 13,
     },
     genderButtonSelectedMale: {
         backgroundColor: colors.pink[50],

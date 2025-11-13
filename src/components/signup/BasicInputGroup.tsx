@@ -11,7 +11,7 @@ const BasicInputGroup = ({ label, value, onChange, error }: any) => {
                 value={value}
                 onChangeText={onChange}
                 placeholder={`${label}을 입력하세요`}
-                placeholderTextColor="#A3A3A3"
+                placeholderTextColor="#6B7280"
             />
         </View>
     );

@@ -4,7 +4,6 @@ import { colors, typography } from '../../theme/tokens';
 export default StyleSheet.create({
     group: {
         gap: 8,
-        marginBottom: 36,
     },
     label: {
         ...typography.body16r,
@@ -20,6 +19,7 @@ export default StyleSheet.create({
         paddingHorizontal: 16,
         paddingVertical: 14,
         fontSize: 16,
+        color: '#364153',
         backgroundColor: colors.white.base,
         width: '100%',
         height: 52,

@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import ButtonView from '../components/ButtonView';
-import ErrorBanner from '../components/ErrorBanner';
+import ErrorBanner from '../components/signup/ErrorBanner';
 import GenderSelector from '../components/signup/GenderSelector';
 import BasicProgressHeader from '../components/signup/BasicProgressHeader';
 import BasicInputGroup from '../components/signup/BasicInputGroup';
@@ -26,7 +26,6 @@ const SignupBasicScreen: React.FC<SignupBasicScreenProps> = ({ onNavigate }) => 
 
     const [progressAnimation] = useState(new Animated.Value(0));
     const [errorBannerAnimation] = useState(new Animated.Value(0));
-
     const errorHideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     useEffect(() => {
@@ -106,9 +105,20 @@ const SignupBasicScreen: React.FC<SignupBasicScreenProps> = ({ onNavigate }) => 
                 <BasicProgressHeader
                     progressAnimation={progressAnimation}
                     onBack={() => onNavigate('signupLogin')}
-                    // 기존에 48px로 설정되어있지만 실제 안드로이드 실행 시 공백이 많아서 28px로 줄임
                     top={insets.top + 28}
                 />
+
+                <Text
+                    style={{
+                        fontSize: 20,
+                        fontWeight: '700',
+                        color: '#1E2939',
+                        marginBottom: 28,
+                        textAlign: 'center',
+                    }}
+                >
+                    기본 정보를 입력해주세요!
+                </Text>
 
                 <ScrollView
                     contentContainerStyle={[styles.content, { backgroundColor: 'transparent' }]}
@@ -139,12 +149,14 @@ const SignupBasicScreen: React.FC<SignupBasicScreenProps> = ({ onNavigate }) => 
                     </View>
                 </ScrollView>
 
-                <View style={[styles.buttonContainer, { paddingBottom: insets.bottom + 20 }]}>
-                    <ButtonView title="다음" onPress={handleNext} />
-                </View>
+                <View style={[styles.footerContainer, { paddingBottom: 2 }]}>
+                    <View style={styles.buttonContainer}>
+                        <ButtonView title="다음" onPress={handleNext} />
+                    </View>
 
-                <View style={styles.disclaimerContainer}>
-                    <Text style={styles.disclaimerText}>입력하신 정보는 매칭을 위해서만 사용됩니다.</Text>
+                    <Text style={[styles.disclaimerText, { marginTop: 10 }]}>
+                        입력하신 정보는 매칭을 위해서만 사용됩니다.
+                    </Text>
                 </View>
             </LinearGradient>
         </View>
