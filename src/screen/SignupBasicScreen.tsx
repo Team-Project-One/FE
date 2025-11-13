@@ -106,7 +106,8 @@ const SignupBasicScreen: React.FC<SignupBasicScreenProps> = ({ onNavigate }) => 
                 <BasicProgressHeader
                     progressAnimation={progressAnimation}
                     onBack={() => onNavigate('signupLogin')}
-                    top={insets.top + 20}
+                    // 기존에 48px로 설정되어있지만 실제 안드로이드 실행 시 공백이 많아서 28px로 줄임
+                    top={insets.top + 28}
                 />
 
                 <ScrollView

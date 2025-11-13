@@ -28,7 +28,7 @@ const BasicProgressHeader = ({ progressAnimation, onBack, top }: any) => {
 
                 <Text style={styles.step}>1/4단계</Text>
 
-                <View style={{ width: 40 }} />
+                <View style={{ width: 24 }} />
             </View>
         </View>
     );
