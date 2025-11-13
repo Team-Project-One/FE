@@ -3,19 +3,19 @@ import { colors, typography } from '../../theme/tokens';
 
 export default StyleSheet.create({
     container: {
-        paddingHorizontal: 20,
-        paddingBottom: 20,
+        paddingHorizontal: 24,
+        paddingBottom: 36,
     },
     progressBar: {
-        height: 4,
-        backgroundColor: '#E0E0E0',
-        borderRadius: 2,
+        height: 8,
+        backgroundColor: '#E5E7EB',
+        borderRadius: 10000,
         overflow: 'hidden',
-        marginBottom: 15,
+        marginBottom: 24,
     },
     gradient: {
         flex: 1,
-        borderRadius: 2,
+        borderRadius: 10000,
     },
     row: {
         flexDirection: 'row',
@@ -23,14 +23,14 @@ export default StyleSheet.create({
         justifyContent: 'space-between',
     },
     backButton: {
-        width: 40,
-        height: 40,
+        width: 24,
+        height: 24,
         justifyContent: 'center',
         alignItems: 'center',
     },
     step: {
         ...typography.body16r,
-        fontWeight: '500',
-        color: colors.gray[100],
+        fontWeight: '400',
+        color: '#4A5565',
     },
 });

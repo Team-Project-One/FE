@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, Animated } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import BackwardSvg from '../../../assets/back.svg';
-import styles from '../../styles/signup/progressBarStyles';
+import styles from '../../styles/signup/progressHeaderStyles';
 
 const BasicProgressHeader = ({ progressAnimation, onBack, top }: any) => {
     return (
