@@ -1,5 +1,6 @@
 import React from 'react';
 import { TouchableOpacity, Text, ViewStyle, TextStyle } from 'react-native';
+import styles from '../../styles/signup/singupDetailedStyles';
 
 interface Props {
     label: string;
@@ -7,9 +8,10 @@ interface Props {
     onPress: () => void;
     style?: ViewStyle | ViewStyle[];
     textStyle?: TextStyle | TextStyle[];
+    error?: boolean;
 }
 
-const SelectableButton: React.FC<Props> = ({ label, selected, onPress, style, textStyle }) => {
+const SelectableButton: React.FC<Props> = ({ label, selected, onPress, style, textStyle, error }) => {
     return (
         <TouchableOpacity
             onPress={onPress}
@@ -24,17 +26,19 @@ const SelectableButton: React.FC<Props> = ({ label, selected, onPress, style, te
                     height: 50,
                     justifyContent: 'center',
                     alignItems: 'center',
-                    flex: 1,
+                    minWidth: 166,
                 },
+                error && !selected && styles.errorButton,
                 style,
             ]}
         >
             <Text
                 style={[
                     {
-                        color: selected ? '#333333' : '#666666',
-                        fontSize: 14,
-                        fontWeight: selected ? '500' : '400',
+                        color: selected ? '#EC4899' : '#364153',
+                        fontSize: 16,
+                        fontWeight: '400',
+                        lineHeight: 24,
                     },
                     textStyle,
                 ]}

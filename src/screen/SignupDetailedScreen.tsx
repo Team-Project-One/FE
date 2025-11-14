@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, ScrollView, Text, Animated, TouchableOpacity } from 'react-native';
+import { View, ScrollView, Text } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -18,8 +18,11 @@ import MbtiSelector from '../components/signupDetailed/MbtiSelector';
 import { SignupDetailedScreenProps, SignupDetailedFormData } from '../types';
 import styles from '../styles/signup/singupDetailedStyles';
 
-const SignupDetailedScreen: React.FC<SignupDetailedScreenProps> = ({ onNavigate }) => {
+const SignupDetailedScreen: React.FC<SignupDetailedScreenProps> = ({ onNavigate, routeParams }) => {
     const insets = useSafeAreaInsets();
+
+    const prevProgress = routeParams?.progress ?? 0.25;
+    const currentProgress = 0.5;
 
     const [formData, setFormData] = useState<SignupDetailedFormData>({
         job: '',
@@ -33,20 +36,8 @@ const SignupDetailedScreen: React.FC<SignupDetailedScreenProps> = ({ onNavigate 
         mbti: '',
     });
 
-    const [progressAnimation] = useState(new Animated.Value(0));
     const [showErrorBanner, setShowErrorBanner] = useState(false);
-
-    useEffect(() => {
-        Animated.timing(progressAnimation, {
-            toValue: 0.5,
-            duration: 1000,
-            useNativeDriver: false,
-        }).start();
-    }, []);
-
-    const handleChange = (field: keyof SignupDetailedFormData, value: string) => {
-        setFormData((prev) => ({ ...prev, [field]: value }));
-    };
+    const [hasSubmitted, setHasSubmitted] = useState(false);
 
     const getErrorMessage = () => {
         if (!formData.job) return '직업을 선택해주세요.';
@@ -61,20 +52,25 @@ const SignupDetailedScreen: React.FC<SignupDetailedScreenProps> = ({ onNavigate 
         return '';
     };
 
+    const handleChange = (field: keyof SignupDetailedFormData, value: string) => {
+        setFormData((prev) => ({ ...prev, [field]: value }));
+    };
+
     const handleComplete = () => {
+        setHasSubmitted(true);
         const msg = getErrorMessage();
         if (msg) {
             setShowErrorBanner(true);
             return;
         }
-        onNavigate('signupSelfIntro');
+        onNavigate('signupSelfIntro', { progress: currentProgress });
     };
 
     return (
         <View style={{ flex: 1, backgroundColor: 'white' }}>
             <LinearGradient
                 colors={['rgba(252, 231, 243, 0.6)', 'rgba(253, 242, 248, 0.4)', 'rgba(255, 228, 230, 0.6)']}
-                style={styles.container}
+                style={{ flex: 1 }}
             >
                 <StatusBar style="auto" />
 
@@ -86,9 +82,12 @@ const SignupDetailedScreen: React.FC<SignupDetailedScreenProps> = ({ onNavigate 
                 />
 
                 <BasicProgressHeader
-                    progressAnimation={progressAnimation}
-                    onBack={() => onNavigate('signupBasic')}
+                    startProgress={prevProgress}
+                    endProgress={currentProgress}
+                    onBack={() => onNavigate('signupBasic', { progress: 0.25 })}
                     top={insets.top + 28}
+                    step={2}
+                    totalSteps={4}
                 />
 
                 <View style={styles.titleContainer}>
@@ -96,52 +95,75 @@ const SignupDetailedScreen: React.FC<SignupDetailedScreenProps> = ({ onNavigate 
                 </View>
 
                 <ScrollView
-                    contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 40 }]}
+                    contentContainerStyle={[styles.content, { paddingBottom: 30 }]}
                     showsVerticalScrollIndicator={false}
                 >
                     <View style={styles.formContainer}>
-                        <JobSelector value={formData.job} onChange={(v) => handleChange('job', v)} />
+                        <JobSelector
+                            value={formData.job}
+                            onChange={(v) => handleChange('job', v)}
+                            error={hasSubmitted && !formData.job}
+                        />
 
-                        <RegionSelector value={formData.region} onChange={(v) => handleChange('region', v)} />
+                        <RegionSelector
+                            value={formData.region}
+                            onChange={(v) => handleChange('region', v)}
+                            error={hasSubmitted && !formData.region}
+                        />
 
                         <DrinkingSelector
                             value={formData.drinkingFrequency}
                             onChange={(v) => handleChange('drinkingFrequency', v)}
+                            error={hasSubmitted && !formData.drinkingFrequency}
                         />
 
                         <SmokingSelector
                             value={formData.smokingStatus}
                             onChange={(v) => handleChange('smokingStatus', v)}
+                            error={hasSubmitted && !formData.smokingStatus}
                         />
 
-                        <HeightInput value={formData.height} onChange={(v) => handleChange('height', v)} />
+                        <HeightInput
+                            value={formData.height}
+                            onChange={(v) => handleChange('height', v)}
+                            error={hasSubmitted && !formData.height}
+                        />
 
-                        <PetsSelector value={formData.pets} onChange={(v) => handleChange('pets', v)} />
+                        <PetsSelector
+                            value={formData.pets}
+                            onChange={(v) => handleChange('pets', v)}
+                            error={hasSubmitted && !formData.pets}
+                        />
 
-                        <ReligionSelector value={formData.religion} onChange={(v) => handleChange('religion', v)} />
+                        <ReligionSelector
+                            value={formData.religion}
+                            onChange={(v) => handleChange('religion', v)}
+                            error={hasSubmitted && !formData.religion}
+                        />
 
                         <ContactFrequencySelector
                             value={formData.contactFrequency}
                             onChange={(v) => handleChange('contactFrequency', v)}
+                            error={hasSubmitted && !formData.contactFrequency}
                         />
 
-                        <MbtiSelector value={formData.mbti} onChange={(v) => handleChange('mbti', v)} />
-
-                        <View style={[styles.buttonContainer, { paddingBottom: insets.bottom + 20 }]}>
-                            <ButtonView title="다음" onPress={handleComplete} />
-                            <TouchableOpacity
-                                onPress={() => onNavigate('main')}
-                                style={{ marginTop: 12, alignSelf: 'center' }}
-                            >
-                                <Text style={{ color: '#6B7280' }}>메인으로</Text>
-                            </TouchableOpacity>
-                        </View>
-
-                        <View style={styles.disclaimerContainer}>
-                            <Text style={styles.disclaimerText}>입력하신 정보는 매칭을 위해서만 사용됩니다.</Text>
-                        </View>
+                        <MbtiSelector
+                            value={formData.mbti}
+                            onChange={(v) => handleChange('mbti', v)}
+                            error={hasSubmitted && !formData.mbti}
+                        />
                     </View>
                 </ScrollView>
+
+                <View style={[styles.footerContainer, { paddingBottom: 20 }]}>
+                    <View style={styles.buttonContainer}>
+                        <ButtonView title="다음" onPress={handleComplete} />
+                    </View>
+
+                    <Text style={[styles.disclaimerText, { marginTop: 10 }]}>
+                        입력하신 정보는 매칭을 위해서만 사용됩니다.
+                    </Text>
+                </View>
             </LinearGradient>
         </View>
     );

@@ -5,6 +5,7 @@ import styles from '../../styles/signup/singupDetailedStyles';
 interface RegionSelectorProps {
     value: string;
     onChange: (region: string) => void;
+    error?: boolean;
 }
 
 const locations = [
@@ -27,15 +28,21 @@ const locations = [
     '제주',
 ];
 
-const RegionSelector: React.FC<RegionSelectorProps> = ({ value, onChange }) => {
+const RegionSelector: React.FC<RegionSelectorProps> = ({ value, onChange, error }) => {
     const [visible, setVisible] = useState(false);
 
     return (
         <View style={styles.inputGroup}>
             <Text style={styles.label}>지역</Text>
-            <TouchableOpacity style={styles.input} onPress={() => setVisible(true)} activeOpacity={0.8}>
+
+            <TouchableOpacity
+                style={[styles.input, error && styles.errorButton]}
+                onPress={() => setVisible(true)}
+                activeOpacity={0.8}
+            >
                 <Text style={value ? styles.inputText : styles.inputPlaceholder}>{value || '지역을 선택하세요'}</Text>
             </TouchableOpacity>
+
             <Modal visible={visible} transparent animationType="slide" onRequestClose={() => setVisible(false)}>
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContent}>
@@ -45,11 +52,13 @@ const RegionSelector: React.FC<RegionSelectorProps> = ({ value, onChange }) => {
                                 <Text style={styles.modalCloseIcon}>✕</Text>
                             </TouchableOpacity>
                         </View>
+
                         <FlatList
                             data={locations}
                             keyExtractor={(item) => item}
                             renderItem={({ item }) => {
                                 const selected = value === item;
+
                                 return (
                                     <TouchableOpacity
                                         style={[styles.modalItem, selected && styles.modalItemSelected]}
@@ -67,7 +76,6 @@ const RegionSelector: React.FC<RegionSelectorProps> = ({ value, onChange }) => {
                             }}
                             ItemSeparatorComponent={() => <View style={styles.modalSeparator} />}
                             showsVerticalScrollIndicator={false}
-                            style={styles.modalList}
                         />
                     </View>
                 </View>

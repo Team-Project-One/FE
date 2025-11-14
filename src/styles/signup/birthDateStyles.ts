@@ -25,6 +25,7 @@ export default StyleSheet.create({
         height: 52,
     },
     inputError: {
+        borderTopColor: '#FB2C36',
         borderColor: '#FB2C36',
     },
     desc: {

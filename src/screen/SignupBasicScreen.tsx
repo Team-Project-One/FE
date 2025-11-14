@@ -12,8 +12,11 @@ import BirthDateInput from '../components/signup/BirthDateInput';
 import { SignupBasicScreenProps, SignupBasicFormData } from '../types';
 import styles from '../styles/signup/signupBasicStyles';
 
-const SignupBasicScreen: React.FC<SignupBasicScreenProps> = ({ onNavigate }) => {
+const SignupBasicScreen: React.FC<SignupBasicScreenProps> = ({ onNavigate, routeParams }) => {
     const insets = useSafeAreaInsets();
+
+    const prevProgress = routeParams?.progress ?? 0;
+    const currentProgress = 0.25;
 
     const [formData, setFormData] = useState<SignupBasicFormData>({
         name: '',
@@ -24,17 +27,8 @@ const SignupBasicScreen: React.FC<SignupBasicScreenProps> = ({ onNavigate }) => 
     const [errors, setErrors] = useState<{ [key: string]: boolean }>({});
     const [showErrorBanner, setShowErrorBanner] = useState(false);
 
-    const [progressAnimation] = useState(new Animated.Value(0));
-    const [errorBannerAnimation] = useState(new Animated.Value(0));
+    const errorBannerAnimation = useRef(new Animated.Value(0)).current;
     const errorHideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-    useEffect(() => {
-        Animated.timing(progressAnimation, {
-            toValue: 0.25,
-            duration: 1000,
-            useNativeDriver: false,
-        }).start();
-    }, []);
 
     const handleInputChange = (field: keyof SignupBasicFormData, value: string) => {
         setFormData((prev) => ({ ...prev, [field]: value }));
@@ -88,7 +82,7 @@ const SignupBasicScreen: React.FC<SignupBasicScreenProps> = ({ onNavigate }) => 
     };
 
     const handleNext = () => {
-        if (validateForm()) onNavigate('signupDetailed');
+        if (validateForm()) onNavigate('signupDetailed', { progress: currentProgress });
         else showErrorBannerWithAnimation();
     };
 
@@ -103,9 +97,12 @@ const SignupBasicScreen: React.FC<SignupBasicScreenProps> = ({ onNavigate }) => 
                 <ErrorBanner message={getErrorMessage()} visible={showErrorBanner} top={insets.top + 16} />
 
                 <BasicProgressHeader
-                    progressAnimation={progressAnimation}
+                    startProgress={prevProgress}
+                    endProgress={currentProgress}
                     onBack={() => onNavigate('signupLogin')}
-                    top={insets.top + 28}
+                    top={insets.top + 40}
+                    step={1}
+                    totalSteps={4}
                 />
 
                 <Text
@@ -113,7 +110,7 @@ const SignupBasicScreen: React.FC<SignupBasicScreenProps> = ({ onNavigate }) => 
                         fontSize: 20,
                         fontWeight: '700',
                         color: '#1E2939',
-                        marginBottom: 28,
+                        marginBottom: 40,
                         textAlign: 'center',
                     }}
                 >
@@ -124,18 +121,22 @@ const SignupBasicScreen: React.FC<SignupBasicScreenProps> = ({ onNavigate }) => 
                     contentContainerStyle={[styles.content, { backgroundColor: 'transparent' }]}
                     style={{ backgroundColor: 'transparent' }}
                 >
-                    <BasicInputGroup
-                        label="이름"
-                        value={formData.name}
-                        onChange={(v: string) => handleInputChange('name', v)}
-                        error={errors.name}
-                    />
+                    <View style={{ marginBottom: 6 }}>
+                        <BasicInputGroup
+                            label="이름"
+                            value={formData.name}
+                            onChange={(v: string) => handleInputChange('name', v)}
+                            error={errors.name}
+                        />
+                    </View>
 
-                    <BirthDateInput
-                        value={formData.birthDate}
-                        onChange={(v: string) => handleInputChange('birthDate', v)}
-                        error={errors.birthDate}
-                    />
+                    <View style={{ marginBottom: 6 }}>
+                        <BirthDateInput
+                            value={formData.birthDate}
+                            onChange={(v: string) => handleInputChange('birthDate', v)}
+                            error={errors.birthDate}
+                        />
+                    </View>
 
                     <View>
                         <Text style={styles.label}>성별</Text>
@@ -149,7 +150,7 @@ const SignupBasicScreen: React.FC<SignupBasicScreenProps> = ({ onNavigate }) => 
                     </View>
                 </ScrollView>
 
-                <View style={[styles.footerContainer, { paddingBottom: 2 }]}>
+                <View style={[styles.footerContainer, { paddingBottom: 20 }]}>
                     <View style={styles.buttonContainer}>
                         <ButtonView title="다음" onPress={handleNext} />
                     </View>

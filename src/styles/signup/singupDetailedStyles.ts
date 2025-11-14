@@ -11,14 +11,14 @@ export default StyleSheet.create({
         alignItems: 'center',
     },
     headerTitle: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        color: '#333333',
+        fontSize: 20,
+        fontWeight: '700',
+        color: '#1E2939',
         textAlign: 'center',
     },
     content: {
         flexGrow: 1,
-        padding: 20,
+        padding: 24,
     },
     formContainer: {
         gap: 25,
@@ -32,25 +32,27 @@ export default StyleSheet.create({
         color: '#364153',
     },
     input: {
-        borderWidth: 1.35,
-        borderColor: '#9CA3AF',
         borderTopWidth: 1.35,
         borderTopColor: '#9CA3AF',
+        borderWidth: 1.35,
+        borderColor: '#9CA3AF',
         borderRadius: 10,
         paddingHorizontal: 16,
-        paddingVertical: 12,
+        paddingVertical: 14,
         fontSize: 16,
+        color: '#364153',
         backgroundColor: colors.white.base,
-        color: '#333333',
+        width: '100%',
         height: 52,
     },
     inputText: {
-        color: '#333333',
+        color: '#364153',
         fontSize: 16,
     },
     inputPlaceholder: {
-        color: '#999999',
+        color: '#6B7280',
         fontSize: 16,
+        fontWeight: '400',
     },
     cmSuffix: {
         position: 'absolute',
@@ -59,15 +61,18 @@ export default StyleSheet.create({
         bottom: 0,
         textAlignVertical: 'center',
         textAlign: 'center',
-        color: '#666666',
+        color: '#364153',
         lineHeight: 52,
     },
     jobContainer: {
         gap: 8,
+        width: '100%',
+        alignSelf: 'stretch',
     },
     jobRow: {
         flexDirection: 'row',
-        gap: 8,
+        gap: 10,
+        justifyContent: 'space-between',
     },
     twoColumnContainer: {
         gap: 8,
@@ -77,17 +82,21 @@ export default StyleSheet.create({
         gap: 8,
     },
     mbtiGrid: {
+        width: '100%',
         flexDirection: 'row',
         flexWrap: 'wrap',
-        gap: 12,
-        justifyContent: 'flex-start',
-        alignItems: 'flex-start',
+        justifyContent: 'space-between',
     },
-    buttonContainer: {
+    footerContainer: {
         paddingHorizontal: 20,
-        alignSelf: 'center',
+        alignItems: 'center',
         width: '100%',
         maxWidth: 480,
+        alignSelf: 'center',
+    },
+
+    buttonContainer: {
+        width: '100%',
     },
     disclaimerContainer: {
         paddingHorizontal: 20,
@@ -95,9 +104,14 @@ export default StyleSheet.create({
         alignItems: 'center',
     },
     disclaimerText: {
-        fontSize: 12,
+        fontSize: 13,
+        paddingBottom: 20,
         color: '#6B7280',
         textAlign: 'center',
+    },
+    errorButton: {
+        borderTopColor: '#FB2C36',
+        borderColor: '#FB2C36',
     },
     modalOverlay: {
         flex: 1,
