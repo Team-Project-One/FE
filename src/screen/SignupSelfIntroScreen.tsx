@@ -20,14 +20,14 @@ const GradientText: React.FC<{
         <Svg width={width} height={height}>
             <Defs>
                 <SvgLinearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <Stop offset="0%" stopColor="#F6339A" />
-                    <Stop offset="100%" stopColor="#FF2056" />
+                    <Stop offset="0%" stopColor="#EC4899" />
+                    <Stop offset="100%" stopColor="#F54144" />
                 </SvgLinearGradient>
             </Defs>
             <SvgText
                 fill="url(#grad)"
                 fontSize={fontSize}
-                fontWeight="700"
+                fontWeight="400"
                 x={width / 2}
                 y={height * 0.72}
                 textAnchor="middle"
@@ -105,16 +105,16 @@ const SignupSelfIntroScreen: React.FC<SignupSelfIntroScreenProps> = ({ onNavigat
                         >
                             <Text style={styles.tipsTitle}>자기소개 팁</Text>
                             <View style={styles.tipItem}>
-                                <Text style={styles.tipText}>· 자신의 성격과 취미를 간단히 소개해보세요</Text>
+                                <Text style={styles.tipText}>• 자신의 성격과 취미를 간단히 소개해보세요</Text>
                             </View>
                             <View style={styles.tipItem}>
-                                <Text style={styles.tipText}>· 이상형이나 원하는 관계에 대해 언급하세요</Text>
+                                <Text style={styles.tipText}>• 이상형이나 원하는 관계에 대해 언급하세요</Text>
                             </View>
                             <View style={styles.tipItem}>
-                                <Text style={styles.tipText}>· 진솔하고 긍정적인 내용이 좋은 인상을 줍니다</Text>
+                                <Text style={styles.tipText}>• 진솔하고 긍정적인 내용이 좋은 인상을 줍니다</Text>
                             </View>
                             <View style={styles.tipItem}>
-                                <Text style={styles.tipText}>· 너무 길지 않게 핵심만 담아주세요</Text>
+                                <Text style={styles.tipText}>• 너무 길지 않게 핵심만 담아주세요</Text>
                             </View>
                         </LinearGradient>
                     </View>
@@ -125,9 +125,18 @@ const SignupSelfIntroScreen: React.FC<SignupSelfIntroScreenProps> = ({ onNavigat
                         <ButtonView title="다음" onPress={handleNext} />
                     </View>
 
-                    <TouchableOpacity style={styles.skipButton} activeOpacity={0.8} onPress={handleNext}>
-                        <GradientText text="건너뛰기" width={300} height={26} fontSize={16} />
-                    </TouchableOpacity>
+                    <LinearGradient
+                        colors={['#EC4899', '#F54144']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={styles.skipButtonOuter}
+                    >
+                        <TouchableOpacity activeOpacity={0.8} onPress={handleNext} style={styles.skipButtonInner}>
+                            <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+                                <GradientText text="건너뛰기" width={300} height={26} fontSize={16} />
+                            </View>
+                        </TouchableOpacity>
+                    </LinearGradient>
 
                     <Text style={[styles.disclaimerText, { marginTop: 10 }]}>
                         추후 마이페이지에서 변경할 수 있습니다.
@@ -201,24 +210,27 @@ const styles = StyleSheet.create({
         maxWidth: 480,
     },
     buttonContainer: { width: '100%', marginBottom: 12 },
-    skipButton: {
+
+    skipButtonOuter: {
         width: '100%',
         height: 64,
+        padding: 1.35,
+        borderRadius: 14,
+    },
+    skipButtonInner: {
+        flex: 1,
+        backgroundColor: '#FFFFFF',
+        borderRadius: 13,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: '#FFFFFF',
-        borderRadius: 14,
-        borderWidth: 1.35,
-        borderColor: '#F6339A',
-        borderTopWidth: 1.35,
     },
+
     disclaimerText: {
         fontSize: 14,
         fontWeight: '400',
         color: '#6A7282',
         textAlign: 'center',
     },
-    bottomSpacing: { height: 40 },
 });
 
 export default SignupSelfIntroScreen;
