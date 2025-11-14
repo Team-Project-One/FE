@@ -1,5 +1,5 @@
 import React from 'react';
-import { TouchableOpacity, Text, ViewStyle } from 'react-native';
+import { TouchableOpacity, Text, ViewStyle, TextStyle } from 'react-native';
 import ChatIcon from '../../assets/chat.svg';
 import RematchIcon from '../../assets/rematch.svg';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -11,6 +11,7 @@ export interface GradientButtonProps {
     variant?: 'gradient' | 'outline';
     disabled?: boolean;
     size?: 'default' | 'small' | 'large';
+    titleStyle?: TextStyle | TextStyle[];
 }
 
 const HEIGHTS: Record<NonNullable<GradientButtonProps['size']>, number> = {
@@ -28,6 +29,7 @@ const ButtonView: React.FC<GradientButtonProps> = ({
     variant = 'gradient',
     disabled = false,
     size = 'default',
+    titleStyle,
 }) => {
     const height = HEIGHTS[size];
     const buttonStyle: ViewStyle = {
@@ -63,7 +65,9 @@ const ButtonView: React.FC<GradientButtonProps> = ({
                             {icon}
                         </Text>
                     ))}
-                <Text style={{ color: disabled ? '#D1D5DB' : '#EC4899', fontWeight: '400', fontSize: 18 }}>
+                <Text
+                    style={[{ color: disabled ? '#D1D5DB' : '#EC4899', fontWeight: '400', fontSize: 18 }, titleStyle]}
+                >
                     {title}
                 </Text>
             </TouchableOpacity>
@@ -93,7 +97,14 @@ const ButtonView: React.FC<GradientButtonProps> = ({
                     ) : (
                         <Text style={{ color: 'white', fontWeight: '400', fontSize: 18, marginRight: 8 }}>{icon}</Text>
                     ))}
-                <Text style={{ color: 'white', fontWeight: '400', fontSize: 18 }}>{title}</Text>
+                <Text
+                    style={[
+                        { color: 'white', fontWeight: '400', fontSize: 18, lineHeight: 28, textAlign: 'center' },
+                        titleStyle,
+                    ]}
+                >
+                    {title}
+                </Text>
             </LinearGradient>
         </TouchableOpacity>
     );
