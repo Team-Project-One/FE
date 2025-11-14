@@ -19,7 +19,7 @@ export default StyleSheet.create({
     },
 
     footerContainer: {
-        paddingHorizontal: 20,
+        paddingHorizontal: 24,
         alignItems: 'center',
         width: '100%',
         maxWidth: 480,

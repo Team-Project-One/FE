@@ -77,7 +77,7 @@ const ButtonView: React.FC<GradientButtonProps> = ({
     return (
         <TouchableOpacity onPress={onPress} disabled={disabled} activeOpacity={0.9} style={buttonStyle}>
             <LinearGradient
-                colors={disabled ? ['#D1D5DB', '#D1D5DB'] : ['#F54144', '#EC4899']}
+                colors={disabled ? ['#D1D5DB', '#D1D5DB'] : ['#EC4899', '#F54144']} // ← 여기 순서 변경됨
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 style={{

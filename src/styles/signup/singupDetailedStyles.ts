@@ -79,7 +79,8 @@ export default StyleSheet.create({
     },
     buttonRow: {
         flexDirection: 'row',
-        gap: 8,
+        gap: 10,
+        justifyContent: 'space-between',
     },
     mbtiGrid: {
         width: '100%',
@@ -88,7 +89,7 @@ export default StyleSheet.create({
         justifyContent: 'space-between',
     },
     footerContainer: {
-        paddingHorizontal: 20,
+        paddingHorizontal: 24,
         alignItems: 'center',
         width: '100%',
         maxWidth: 480,
