@@ -31,7 +31,7 @@ export default StyleSheet.create({
     },
 
     disclaimerText: {
-        fontSize: 13,
+        fontSize: 14,
         paddingBottom: 20,
         color: '#6B7280',
         textAlign: 'center',
