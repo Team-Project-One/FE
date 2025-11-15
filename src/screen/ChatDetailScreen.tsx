@@ -81,7 +81,7 @@ const ChatDetailScreen: React.FC<ChatDetailScreenProps> = ({ onNavigate, chatNam
                 </TouchableOpacity>
 
                 <View style={styles.profileInfoHeader}>
-                    <View style={[styles.profileImageSmall, { backgroundColor: '#FEE2E2' }]}>
+                    <View style={[styles.profileImageSmall, { backgroundColor: '#FCCEE8' }]}>
                         <FemaleIcon width={24} height={24} />
                     </View>
 
