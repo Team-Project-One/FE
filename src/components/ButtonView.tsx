@@ -10,14 +10,14 @@ export interface GradientButtonProps {
     icon?: string;
     variant?: 'gradient' | 'outline';
     disabled?: boolean;
-    size?: 'default' | 'small' | 'large';
+    size?: 'default' | 'small' | 'medium';
     titleStyle?: TextStyle | TextStyle[];
 }
 
 const HEIGHTS: Record<NonNullable<GradientButtonProps['size']>, number> = {
     default: 64,
     small: 48,
-    large: 80,
+    medium: 52,
 };
 
 const BORDER_RADIUS = 14;
