@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     StyleSheet,
     Text,
@@ -14,13 +14,15 @@ import FemaleIcon from '../../assets/female.svg';
 import LightIcon from '../../assets/light.svg';
 import LocationIcon from '../../assets/location.svg';
 import SendIcon from '../../assets/send.svg';
-import FixIcon from '../../assets/fix.svg';
+import ReportIcon from '../assets/reportIcon.svg';
 import ExitIcon from '../../assets/exit.svg';
 import MenuIcon from '../assets/menuIcon.svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { BaseScreenProps } from '../types';
 import { LinearGradient } from 'expo-linear-gradient';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import ChatTipModal from '../components/ChatTipModal';
 
 interface ChatDetailScreenProps extends BaseScreenProps {
     chatName?: string;
@@ -36,6 +38,22 @@ const ChatDetailScreen: React.FC<ChatDetailScreenProps> = ({ onNavigate, chatNam
     const insets = useSafeAreaInsets();
     const [message, setMessage] = useState('');
     const [showMenu, setShowMenu] = useState(false);
+
+    const [tipVisible, setTipVisible] = useState(true);
+    const tipType = 'ice';
+
+    useEffect(() => {
+        const checkTip = async () => {
+            const viewed = await AsyncStorage.getItem('chat_tip_viewed');
+            if (viewed === 'true') setTipVisible(false);
+        };
+        checkTip();
+    }, []);
+
+    const closeTip = async () => {
+        setTipVisible(false);
+        await AsyncStorage.setItem('chat_tip_viewed', 'true');
+    };
 
     return (
         <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
@@ -132,8 +150,8 @@ const ChatDetailScreen: React.FC<ChatDetailScreenProps> = ({ onNavigate, chatNam
             {showMenu && (
                 <View style={styles.dropdownMenu}>
                     <TouchableOpacity style={styles.menuItem} onPress={() => setShowMenu(false)}>
-                        <FixIcon width={16} height={16} />
-                        <Text style={styles.menuItemText}>채팅창 상단 고정</Text>
+                        <ReportIcon width={16} height={16} />
+                        <Text style={styles.menuItemText}>신고하기</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity style={styles.menuItem} onPress={() => setShowMenu(false)}>
@@ -142,13 +160,14 @@ const ChatDetailScreen: React.FC<ChatDetailScreenProps> = ({ onNavigate, chatNam
                     </TouchableOpacity>
                 </View>
             )}
+
+            <ChatTipModal visible={tipVisible} type={tipType} onClose={closeTip} />
         </KeyboardAvoidingView>
     );
 };
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#FFFFFF' },
-
     header: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -158,7 +177,6 @@ const styles = StyleSheet.create({
         borderBottomWidth: 1.35,
         borderBottomColor: '#0000001A',
     },
-
     backButton: {
         width: 24,
         height: 24,
@@ -166,13 +184,11 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginRight: 16,
     },
-
     profileInfoHeader: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 8,
     },
-
     profileImageSmall: {
         width: 40,
         height: 40,
@@ -181,9 +197,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
-
     headerName: { fontSize: 16, fontWeight: '400', lineHeight: 24, color: '#1E2939' },
-
     menuButton: {
         width: 24,
         height: 24,
@@ -193,7 +207,6 @@ const styles = StyleSheet.create({
     },
 
     messagesContainer: { flex: 1 },
-
     messagesContent: { padding: 24, flexGrow: 1 },
 
     myMessageContainer: {
@@ -202,14 +215,12 @@ const styles = StyleSheet.create({
         maxWidth: '75%',
         alignItems: 'flex-end',
     },
-
     myMessageBubble: {
         paddingVertical: 10,
         paddingHorizontal: 18,
         borderRadius: 10,
         maxWidth: '100%',
     },
-
     myMessageText: { color: '#FFFFFF', fontSize: 16, lineHeight: 24 },
     myMessageTime: { marginTop: 4, fontSize: 12, color: '#6A7282', textAlign: 'right' },
 
@@ -218,7 +229,6 @@ const styles = StyleSheet.create({
         marginBottom: 12,
         maxWidth: '75%',
     },
-
     theirMessageBubble: {
         backgroundColor: '#FFFFFF',
         borderWidth: 1.35,
@@ -227,7 +237,6 @@ const styles = StyleSheet.create({
         paddingHorizontal: 17,
         borderRadius: 10,
     },
-
     theirMessageText: { fontSize: 16, lineHeight: 24, color: '#1E2939' },
     theirMessageTime: { marginTop: 4, fontSize: 12, color: '#6A7282', textAlign: 'left' },
 
@@ -238,11 +247,8 @@ const styles = StyleSheet.create({
         borderTopWidth: 1.35,
         borderTopColor: '#0000001A',
     },
-
     suggestionButtons: { flexDirection: 'row', gap: 8, marginBottom: 21 },
-
     suggestionButton: { flex: 1, borderRadius: 10, overflow: 'hidden' },
-
     suggestionGradient: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -251,11 +257,9 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         gap: 2,
     },
-
     suggestionText: { fontSize: 14, fontWeight: '400', lineHeight: 20, color: '#C6005C' },
 
     messageInputContainer: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingBottom: 24 },
-
     messageInput: {
         flex: 1,
         minHeight: 50,
@@ -267,9 +271,7 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         fontSize: 16,
     },
-
     sendButton: { width: 50, height: 50, borderRadius: 10, overflow: 'hidden', backgroundColor: '#FFFFFF' },
-
     sendButtonGradient: {
         width: '100%',
         height: '100%',
@@ -280,7 +282,7 @@ const styles = StyleSheet.create({
 
     dropdownMenu: {
         position: 'absolute',
-        top: 80,
+        top: 72,
         right: 24,
         backgroundColor: '#FFFFFF',
         borderRadius: 10,
@@ -295,7 +297,6 @@ const styles = StyleSheet.create({
         elevation: 12,
         minWidth: 180,
     },
-
     menuItem: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -303,8 +304,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
         gap: 8,
     },
-
-    menuItemText: { fontSize: 16, color: '#0A0A0A', fontWeight: '400' },
+    menuItemText: { fontSize: 16, color: '#F54900', fontWeight: '400' },
     exitText: { color: '#E7000B' },
 });
 
