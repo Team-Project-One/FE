@@ -3,6 +3,7 @@ import './theme/global.css';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Text, TextInput } from 'react-native';
 import { useFonts, Arimo_400Regular, Arimo_700Bold } from '@expo-google-fonts/arimo';
+
 import MainScreen from './screen/MainScreen';
 import SignupLandingScreen from './screen/SignupLandingScreen';
 import SignupLoginScreen from './screen/SignupLoginScreen';
@@ -18,7 +19,9 @@ import SettingsScreen from './screen/SettingsScreen';
 import ProfileEditScreen from './screen/ProfileEditScreen';
 import TermsScreen from './screen/TermsScreen';
 import PrivacyScreen from './screen/PrivacyScreen';
+
 import { Screen, NavigationHandler } from './types';
+import { ThemeProvider } from './theme/ThemeContext';
 
 interface AppState {
     currentScreen: Screen;
@@ -27,10 +30,6 @@ interface AppState {
     chatDetailAge?: number;
 }
 
-/**
- * 최상위 루트 컴포넌트
- * SafeAreaProvider로 앱을 감싸 SafeArea 값을 하위 컴포넌트에 제공
- */
 const App: React.FC = () => {
     const [fontsLoaded] = useFonts({ Arimo_400Regular, Arimo_700Bold });
     const [appState, setAppState] = useState<AppState>({
@@ -40,8 +39,6 @@ const App: React.FC = () => {
 
     useEffect(() => {
         if (fontsLoaded) {
-            // 전역 기본 글꼴 설정
-            // 이미 기본값이 있는 경우 보존 후 덮어쓰기
             Text.defaultProps = Text.defaultProps || {};
             Text.defaultProps.style = [Text.defaultProps.style, { fontFamily: 'Arimo_400Regular' }];
 
@@ -50,9 +47,7 @@ const App: React.FC = () => {
         }
     }, [fontsLoaded]);
 
-    if (!fontsLoaded) {
-        return null;
-    }
+    if (!fontsLoaded) return null;
 
     const handleNavigation: NavigationHandler = (screen, extraData?: any) => {
         if (screen === 'chatDetail' && extraData) {
@@ -116,7 +111,11 @@ const App: React.FC = () => {
         }
     };
 
-    return <SafeAreaProvider>{renderScreen()}</SafeAreaProvider>;
+    return (
+        <ThemeProvider>
+            <SafeAreaProvider>{renderScreen()}</SafeAreaProvider>
+        </ThemeProvider>
+    );
 };
 
 export default App;

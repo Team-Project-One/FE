@@ -6,6 +6,7 @@ import { StatusBar } from 'expo-status-bar';
 import { BaseScreenProps } from '../types';
 import BackIcon from '../assets/back.svg';
 import BottomNavigation from '../components/BottomNavigation';
+import { useTheme } from '../theme/ThemeContext';
 
 interface ChatScreenProps extends BaseScreenProps {}
 
@@ -47,24 +48,39 @@ const mockChats: ChatData[] = [
 
 const ChatScreen: React.FC<ChatScreenProps> = ({ onNavigate }) => {
     const insets = useSafeAreaInsets();
+    const { theme } = useTheme();
+    const isDark = theme === 'dark';
 
     return (
-        <View style={styles.container}>
-            <StatusBar style="dark" />
+        <View style={[styles.container, { backgroundColor: isDark ? '#000000' : '#FFFFFF' }]}>
+            <StatusBar style={isDark ? 'light' : 'dark'} />
 
-            <View style={[styles.header, { paddingTop: 36 }]}>
+            <View
+                style={[
+                    styles.header,
+                    {
+                        paddingTop: 36,
+                        borderBottomColor: isDark ? '#333333' : '#0000001A',
+                    },
+                ]}
+            >
                 <TouchableOpacity onPress={() => onNavigate('main')} style={styles.backButton}>
-                    <BackIcon width={24} height={24} />
+                    <BackIcon width={24} height={24} color={isDark ? '#FFFFFF' : '#000000'} />
                 </TouchableOpacity>
 
-                <Text style={styles.headerTitle}>채팅</Text>
+                <Text style={[styles.headerTitle, { color: isDark ? '#FFFFFF' : '#1E2939' }]}>채팅</Text>
             </View>
 
             <ScrollView contentContainerStyle={styles.chatList} showsVerticalScrollIndicator={true}>
                 {mockChats.map((chat) => (
                     <TouchableOpacity
                         key={chat.id}
-                        style={styles.chatItem}
+                        style={[
+                            styles.chatItem,
+                            {
+                                borderBottomColor: isDark ? '#333333' : '#0000001A',
+                            },
+                        ]}
                         onPress={() =>
                             onNavigate('chatDetail', {
                                 chatName: chat.name,
@@ -80,15 +96,19 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ onNavigate }) => {
 
                         <View style={styles.chatInfo}>
                             <View style={styles.nameRow}>
-                                <Text style={styles.chatName}>
+                                <Text style={[styles.chatName, { color: isDark ? '#FFFFFF' : '#1E2939' }]}>
                                     {chat.name}({chat.age})
                                 </Text>
                             </View>
-                            <Text style={styles.lastMessage}>{chat.lastMessage}</Text>
+                            <Text style={[styles.lastMessage, { color: isDark ? '#D1D5DC' : '#4A5565' }]}>
+                                {chat.lastMessage}
+                            </Text>
                         </View>
 
                         <View style={styles.rightSection}>
-                            <Text style={styles.chatTime}>{chat.time}</Text>
+                            <Text style={[styles.chatTime, { color: isDark ? '#9CA3AF' : '#6A7282' }]}>
+                                {chat.time}
+                            </Text>
                             {chat.unreadCount > 0 && (
                                 <View style={styles.unreadBadge}>
                                     <Text style={styles.unreadBadgeText}>{chat.unreadCount}</Text>
@@ -109,13 +129,11 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ onNavigate }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#FFFFFF',
     },
     header: {
         paddingHorizontal: 24,
         paddingVertical: 35,
         borderBottomWidth: 1.35,
-        borderBottomColor: '#0000001A',
         justifyContent: 'center',
     },
     backButton: {
@@ -130,7 +148,6 @@ const styles = StyleSheet.create({
         fontSize: 20,
         fontWeight: '400',
         lineHeight: 24,
-        color: '#1E2939',
         textAlign: 'center',
     },
     chatList: {
@@ -141,7 +158,6 @@ const styles = StyleSheet.create({
         paddingVertical: 20,
         paddingHorizontal: 24,
         borderBottomWidth: 1.35,
-        borderBottomColor: '#0000001A',
     },
     profileImageContainer: {
         marginRight: 16,
@@ -167,12 +183,10 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '400',
         lineHeight: 24,
-        color: '#1E2939',
     },
     lastMessage: {
         fontSize: 14,
         lineHeight: 20,
-        color: '#4A5565',
     },
     rightSection: {
         alignItems: 'flex-end',
@@ -181,7 +195,6 @@ const styles = StyleSheet.create({
     chatTime: {
         fontSize: 12,
         lineHeight: 16,
-        color: '#6A7282',
         marginBottom: 8,
     },
     unreadBadge: {

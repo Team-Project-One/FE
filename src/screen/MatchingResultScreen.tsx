@@ -9,6 +9,7 @@ import { StatusBar } from 'expo-status-bar';
 import { MatchingResultScreenProps } from '../types';
 import BottomNavigation from '../components/BottomNavigation';
 import ButtonView from '../components/ButtonView';
+import { useTheme } from '../theme/ThemeContext';
 
 const mockMatchData = {
     name: '지은',
@@ -36,50 +37,59 @@ const mockMatchData = {
 
 const MatchingResultScreen: React.FC<MatchingResultScreenProps> = ({ onNavigate }) => {
     const insets = useSafeAreaInsets();
-    const profile = mockMatchData;
+    const { theme } = useTheme();
+    const isDark = theme === 'dark';
 
+    const profile = mockMatchData;
     const [isExpanded, setIsExpanded] = useState(false);
 
-    const handleChat = () => {
-        onNavigate('chatDetail', { chatName: '지은', chatAge: 26 });
-    };
-
     return (
-        <View style={styles.container}>
-            <StatusBar style="dark" />
+        <View style={[styles.container, { backgroundColor: isDark ? '#000' : '#FFFFFF' }]}>
+            <StatusBar style={isDark ? 'light' : 'dark'} />
 
             <ScrollView
                 contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 12 }]}
                 showsVerticalScrollIndicator={false}
             >
-                <View style={styles.header}>
+                {/* Header */}
+                <View style={[styles.header, { borderBottomColor: isDark ? '#333' : '#0000001A' }]}>
                     <TouchableOpacity onPress={() => onNavigate('main')} style={styles.backButton}>
-                        <BackIcon width={24} height={24} />
+                        <BackIcon width={24} height={24} color={isDark ? '#FFF' : '#000'} />
                     </TouchableOpacity>
 
                     <View style={styles.headerTextContainer}>
-                        <Text style={styles.headerTitle}>운명의 상대를 찾았어요!</Text>
-                        <Text style={styles.headerSubtitle}>사주팔자 기반 완벽 매칭</Text>
+                        <Text style={[styles.headerTitle, { color: isDark ? '#FFFFFF' : '#1E2939' }]}>
+                            운명의 상대를 찾았어요!
+                        </Text>
+                        <Text style={[styles.headerSubtitle, { color: isDark ? '#CCCCCC' : '#4A5565' }]}>
+                            사주팔자 기반 완벽 매칭
+                        </Text>
                     </View>
 
                     <View style={styles.placeholder} />
                 </View>
 
-                <View style={styles.profileCard}>
+                {/* Profile Card */}
+                <View style={[styles.profileCard, { backgroundColor: isDark ? '#111' : '#FDF2F8' }]}>
                     <View style={styles.profileSection}>
                         <View style={styles.profileImageContainer}>
                             {profile.profileImage ? (
                                 <Image source={{ uri: profile.profileImage }} style={styles.profileImage} />
                             ) : (
-                                <View style={styles.profileImagePlaceholder}>
-                                    <Text style={styles.profileEmoji}>👤</Text>
+                                <View
+                                    style={[
+                                        styles.profileImagePlaceholder,
+                                        { backgroundColor: isDark ? '#333' : '#E5E7EB' },
+                                    ]}
+                                >
+                                    <Text style={{ fontSize: 48, color: isDark ? '#FFF' : '#000' }}>👤</Text>
                                 </View>
                             )}
                         </View>
 
                         <View style={styles.profileInfo}>
                             <View style={styles.nameRow}>
-                                <Text style={styles.userName}>
+                                <Text style={[styles.userName, { color: isDark ? '#FFFFFF' : '#1E2939' }]}>
                                     {profile.name}({profile.age})
                                 </Text>
 
@@ -90,21 +100,30 @@ const MatchingResultScreen: React.FC<MatchingResultScreenProps> = ({ onNavigate 
                                 )}
                             </View>
 
-                            <Text style={styles.userDetails}>
+                            <Text style={[styles.userDetails, { color: isDark ? '#CCCCCC' : '#4A5565' }]}>
                                 {profile.job} • {profile.location}
                             </Text>
 
+                            {/* Score Section */}
                             <View style={styles.scoresContainer}>
                                 <View style={styles.scoreRow}>
-                                    <Text style={styles.scoreLabel}>Original Score</Text>
+                                    <Text style={[styles.scoreLabel, { color: isDark ? '#BBB' : '#4A5565' }]}>
+                                        Original Score
+                                    </Text>
                                     <Text style={styles.scoreValueRed}>{profile.originalScore.toFixed(3)}</Text>
                                 </View>
+
                                 <View style={styles.scoreRow}>
-                                    <Text style={styles.scoreLabel}>Final Score</Text>
+                                    <Text style={[styles.scoreLabel, { color: isDark ? '#BBB' : '#4A5565' }]}>
+                                        Final Score
+                                    </Text>
                                     <Text style={styles.scoreValueRed}>{profile.finalScore.toFixed(3)}</Text>
                                 </View>
+
                                 <View style={styles.scoreRow}>
-                                    <Text style={styles.scoreLabel}>Stress Score</Text>
+                                    <Text style={[styles.scoreLabel, { color: isDark ? '#BBB' : '#4A5565' }]}>
+                                        Stress Score
+                                    </Text>
                                     <Text style={styles.scoreValueGreen}>{profile.stressScore.toFixed(3)}</Text>
                                 </View>
                             </View>
@@ -112,79 +131,125 @@ const MatchingResultScreen: React.FC<MatchingResultScreenProps> = ({ onNavigate 
                     </View>
                 </View>
 
-                <View style={styles.sectionCard}>
-                    <Text style={styles.sectionTitle}>MBTI</Text>
+                {/* MBTI Section */}
+                <View style={[styles.sectionCard, { backgroundColor: isDark ? '#111' : '#F9FAFB' }]}>
+                    <Text style={[styles.sectionTitle, { color: isDark ? '#FFFFFF' : '#1E2939' }]}>MBTI</Text>
                     <View style={styles.mbtiTag}>
                         <Text style={styles.mbtiText}>{profile.mbti}</Text>
                     </View>
                 </View>
 
-                <View style={styles.sectionCard}>
-                    <Text style={styles.sectionTitle}>자기소개</Text>
-                    <Text style={styles.introText}>{profile.selfIntroduction}</Text>
+                {/* Self Introduction */}
+                <View style={[styles.sectionCard, { backgroundColor: isDark ? '#111' : '#F9FAFB' }]}>
+                    <Text style={[styles.sectionTitle, { color: isDark ? '#FFFFFF' : '#1E2939' }]}>자기소개</Text>
+                    <Text style={[styles.introText, { color: isDark ? '#CCCCCC' : '#364153' }]}>
+                        {profile.selfIntroduction}
+                    </Text>
                 </View>
 
-                <View style={styles.sectionCard}>
+                {/* Dropdown Section */}
+                <View style={[styles.sectionCard, { backgroundColor: isDark ? '#111' : '#F9FAFB' }]}>
                     <TouchableOpacity style={styles.dropdownHeader} onPress={() => setIsExpanded(!isExpanded)}>
-                        <Text style={styles.sectionTitle}>기타 정보</Text>
-                        <View style={{ paddingBottom: 14 }}>
-                            <DownArrow
-                                width={20}
-                                height={20}
-                                style={{ transform: [{ rotate: isExpanded ? '180deg' : '0deg' }] }}
-                            />
-                        </View>
+                        <Text style={[styles.sectionTitle, { color: isDark ? '#FFFFFF' : '#1E2939' }]}>기타 정보</Text>
+                        <DownArrow
+                            width={20}
+                            height={20}
+                            style={{ transform: [{ rotate: isExpanded ? '180deg' : '0deg' }] }}
+                        />
                     </TouchableOpacity>
 
+                    {/* default 두 줄 */}
                     {!isExpanded && (
                         <>
                             <View style={styles.infoRow}>
-                                <Text style={styles.infoLabel}>음주</Text>
-                                <Text style={styles.infoValue}>{profile.drinking}</Text>
+                                <Text style={[styles.infoLabel, { color: isDark ? '#CCC' : '#4A5565' }]}>음주</Text>
+                                <Text style={[styles.infoValue, { color: isDark ? '#EEE' : '#4A5565' }]}>
+                                    {profile.drinking}
+                                </Text>
                             </View>
+
                             <View style={styles.infoRow}>
-                                <Text style={styles.infoLabel}>흡연 여부</Text>
-                                <Text style={styles.infoValue}>{profile.smoking}</Text>
+                                <Text style={[styles.infoLabel, { color: isDark ? '#CCC' : '#4A5565' }]}>
+                                    흡연 여부
+                                </Text>
+                                <Text style={[styles.infoValue, { color: isDark ? '#EEE' : '#4A5565' }]}>
+                                    {profile.smoking}
+                                </Text>
                             </View>
                         </>
                     )}
 
+                    {/* 펼친 상태 전체 */}
                     {isExpanded && (
                         <>
                             <View style={styles.infoRow}>
-                                <Text style={styles.infoLabel}>음주</Text>
-                                <Text style={styles.infoValue}>{profile.drinking}</Text>
+                                <Text style={[styles.infoLabel, { color: isDark ? '#CCC' : '#4A5565' }]}>음주</Text>
+                                <Text style={[styles.infoValue, { color: isDark ? '#EEE' : '#4A5565' }]}>
+                                    {profile.drinking}
+                                </Text>
                             </View>
+
                             <View style={styles.infoRow}>
-                                <Text style={styles.infoLabel}>흡연 여부</Text>
-                                <Text style={styles.infoValue}>{profile.smoking}</Text>
+                                <Text style={[styles.infoLabel, { color: isDark ? '#CCC' : '#4A5565' }]}>
+                                    흡연 여부
+                                </Text>
+                                <Text style={[styles.infoValue, { color: isDark ? '#EEE' : '#4A5565' }]}>
+                                    {profile.smoking}
+                                </Text>
                             </View>
+
                             <View style={styles.infoRow}>
-                                <Text style={styles.infoLabel}>성지향성</Text>
-                                <Text style={styles.infoValue}>{profile.sexualOrientation}</Text>
+                                <Text style={[styles.infoLabel, { color: isDark ? '#CCC' : '#4A5565' }]}>성지향성</Text>
+                                <Text style={[styles.infoValue, { color: isDark ? '#EEE' : '#4A5565' }]}>
+                                    {profile.sexualOrientation}
+                                </Text>
                             </View>
+
                             <View style={styles.infoRow}>
-                                <Text style={styles.infoLabel}>키</Text>
-                                <Text style={styles.infoValue}>{profile.height}</Text>
+                                <Text style={[styles.infoLabel, { color: isDark ? '#CCC' : '#4A5565' }]}>키</Text>
+                                <Text style={[styles.infoValue, { color: isDark ? '#EEE' : '#4A5565' }]}>
+                                    {profile.height}
+                                </Text>
                             </View>
+
                             <View style={styles.infoRow}>
-                                <Text style={styles.infoLabel}>반려동물</Text>
-                                <Text style={styles.infoValue}>{profile.pets}</Text>
+                                <Text style={[styles.infoLabel, { color: isDark ? '#CCC' : '#4A5565' }]}>반려동물</Text>
+                                <Text style={[styles.infoValue, { color: isDark ? '#EEE' : '#4A5565' }]}>
+                                    {profile.pets}
+                                </Text>
                             </View>
+
                             <View style={styles.infoRow}>
-                                <Text style={styles.infoLabel}>종교</Text>
-                                <Text style={styles.infoValue}>{profile.religion}</Text>
+                                <Text style={[styles.infoLabel, { color: isDark ? '#CCC' : '#4A5565' }]}>종교</Text>
+                                <Text style={[styles.infoValue, { color: isDark ? '#EEE' : '#4A5565' }]}>
+                                    {profile.religion}
+                                </Text>
                             </View>
+
                             <View style={styles.infoRow}>
-                                <Text style={styles.infoLabel}>연락 빈도</Text>
-                                <Text style={styles.infoValue}>{profile.contactfrequency}</Text>
+                                <Text style={[styles.infoLabel, { color: isDark ? '#CCC' : '#4A5565' }]}>
+                                    연락 빈도
+                                </Text>
+                                <Text style={[styles.infoValue, { color: isDark ? '#EEE' : '#4A5565' }]}>
+                                    {profile.contactfrequency}
+                                </Text>
                             </View>
                         </>
                     )}
                 </View>
 
+                {/* Buttons */}
                 <View style={styles.buttonContainer}>
-                    <ButtonView title="채팅하기" icon="chatting" onPress={handleChat} />
+                    <ButtonView
+                        title="채팅하기"
+                        icon="chatting"
+                        onPress={() =>
+                            onNavigate('chatDetail', {
+                                chatName: profile.name,
+                                chatAge: profile.age,
+                            })
+                        }
+                    />
                     <View style={styles.buttonSpacing} />
                     <ButtonView
                         title="다시 매칭하기"
@@ -196,148 +261,88 @@ const MatchingResultScreen: React.FC<MatchingResultScreenProps> = ({ onNavigate 
             </ScrollView>
 
             <View style={{ paddingBottom: insets.bottom }}>
-                <BottomNavigation onNavigate={onNavigate} currentScreen={'main'} />
+                <BottomNavigation onNavigate={onNavigate} currentScreen="main" />
             </View>
         </View>
     );
 };
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#FFFFFF',
-    },
+    container: { flex: 1 },
     scrollContent: {
         paddingHorizontal: 24,
         paddingBottom: 0,
     },
+
     header: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
         marginBottom: 36,
+        borderBottomWidth: 1.35,
     },
     backButton: {
         width: 24,
         height: 24,
         marginTop: 14,
     },
-    headerTextContainer: {
-        flex: 1,
-        alignItems: 'center',
-    },
-    headerTitle: {
-        fontSize: 20,
-        fontWeight: '700',
-        lineHeight: 28,
-        color: '#1E2939',
-        paddingTop: 48,
-        textAlign: 'center',
-    },
-    headerSubtitle: {
-        fontSize: 16,
-        lineHeight: 24,
-        fontWeight: '400',
-        color: '#4A5565',
-        marginTop: 8,
-        textAlign: 'center',
-    },
-    placeholder: {
-        width: 32,
-    },
+    headerTextContainer: { flex: 1, alignItems: 'center' },
+    headerTitle: { fontSize: 20, fontWeight: '700', paddingTop: 48 },
+    headerSubtitle: { fontSize: 16, marginTop: 8 },
+
+    placeholder: { width: 32 },
+
     profileCard: {
-        backgroundColor: '#FDF2F8',
         borderRadius: 14,
         padding: 24,
         marginBottom: 24,
     },
-    profileSection: {
-        flexDirection: 'row',
-    },
-    profileImageContainer: {
-        marginRight: 16,
-    },
-    profileImage: {
-        width: 96,
-        height: 96,
-        borderRadius: 48,
-    },
+    profileSection: { flexDirection: 'row' },
+    profileImageContainer: { marginRight: 16 },
+    profileImage: { width: 96, height: 96, borderRadius: 48 },
     profileImagePlaceholder: {
         width: 96,
         height: 96,
         borderRadius: 48,
-        backgroundColor: '#E5E7EB',
         justifyContent: 'center',
         alignItems: 'center',
     },
-    profileEmoji: {
-        fontSize: 48,
-    },
-    profileInfo: {
-        flex: 1,
-    },
+
+    profileInfo: { flex: 1 },
     nameRow: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 8,
         marginBottom: 4,
     },
-    userName: {
-        fontSize: 24,
-        fontWeight: '700',
-        lineHeight: 32,
-        color: '#1E2939',
-    },
+    userName: { fontSize: 24, fontWeight: '700' },
     userDetails: {
         fontSize: 16,
-        color: '#4A5565',
-        lineHeight: 24,
         marginBottom: 7,
     },
-    scoresContainer: {
-        gap: 4,
-    },
+
+    scoresContainer: { gap: 4 },
     scoreRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
     },
-    scoreLabel: {
-        fontSize: 14,
-        lineHeight: 20,
-        fontWeight: '400',
-        color: '#4A5565',
-    },
+    scoreLabel: { fontSize: 14 },
     scoreValueRed: {
         fontSize: 14,
-        lineHeight: 20,
-        fontWeight: '400',
         color: '#DB2777',
     },
     scoreValueGreen: {
         fontSize: 14,
-        lineHeight: 20,
-        fontWeight: '400',
         color: '#00A63E',
     },
+
     sectionCard: {
-        backgroundColor: '#F9FAFB',
         borderRadius: 10,
         padding: 16,
         marginBottom: 24,
     },
-    sectionTitle: {
-        fontSize: 16,
-        fontWeight: '400',
-        lineHeight: 24,
-        color: '#1E2939',
-        marginBottom: 10,
-    },
-    dropdownHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 4,
-    },
+    sectionTitle: { fontSize: 16, marginBottom: 10, fontWeight: '400' },
+
     mbtiTag: {
         backgroundColor: '#FCE7F3',
         borderRadius: 10000,
@@ -348,29 +353,29 @@ const styles = StyleSheet.create({
     mbtiText: {
         fontSize: 14,
         fontWeight: '400',
-        lineHeight: 20,
         color: '#BE185D',
     },
+
     introText: {
         fontSize: 14,
-        color: '#364153',
         lineHeight: 24,
     },
+
+    dropdownHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 4,
+    },
+
     infoRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         paddingVertical: 8,
     },
-    infoLabel: {
-        fontSize: 14,
-        color: '#4A5565',
-        lineHeight: 20,
-    },
-    infoValue: {
-        fontSize: 14,
-        lineHeight: 20,
-        color: '#4A5565',
-    },
+    infoLabel: { fontSize: 14 },
+    infoValue: { fontSize: 14 },
+
     buttonContainer: {
         marginTop: 10,
         marginBottom: 32,

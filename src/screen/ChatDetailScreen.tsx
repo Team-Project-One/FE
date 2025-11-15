@@ -9,6 +9,11 @@ import {
     KeyboardAvoidingView,
     Platform,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
+import { LinearGradient } from 'expo-linear-gradient';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 import BackIcon from '../../assets/back.svg';
 import FemaleIcon from '../../assets/female.svg';
 import LightIcon from '../../assets/light.svg';
@@ -17,12 +22,10 @@ import SendIcon from '../../assets/send.svg';
 import ReportIcon from '../assets/reportIcon.svg';
 import ExitIcon from '../../assets/exit.svg';
 import MenuIcon from '../assets/menuIcon.svg';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { StatusBar } from 'expo-status-bar';
-import { BaseScreenProps } from '../types';
-import { LinearGradient } from 'expo-linear-gradient';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+
 import ChatTipModal from '../components/ChatTipModal';
+import { BaseScreenProps } from '../types';
+import { useTheme } from '../theme/ThemeContext';
 
 interface ChatDetailScreenProps extends BaseScreenProps {
     chatName?: string;
@@ -36,9 +39,11 @@ const mockMessages = [
 
 const ChatDetailScreen: React.FC<ChatDetailScreenProps> = ({ onNavigate, chatName = '지은', chatAge = 26 }) => {
     const insets = useSafeAreaInsets();
+    const { theme } = useTheme();
+    const isDark = theme === 'dark';
+
     const [message, setMessage] = useState('');
     const [showMenu, setShowMenu] = useState(false);
-
     const [tipVisible, setTipVisible] = useState(true);
     const tipType = 'ice';
 
@@ -56,26 +61,37 @@ const ChatDetailScreen: React.FC<ChatDetailScreenProps> = ({ onNavigate, chatNam
     };
 
     return (
-        <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-            <StatusBar style="dark" />
+        <KeyboardAvoidingView
+            style={[styles.container, { backgroundColor: isDark ? '#000000' : '#FFFFFF' }]}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
+            <StatusBar style={isDark ? 'light' : 'dark'} />
 
-            <View style={[styles.header, { marginTop: insets.top }]}>
+            <View
+                style={[
+                    styles.header,
+                    {
+                        marginTop: insets.top,
+                        borderBottomColor: isDark ? '#333' : '#0000001A',
+                    },
+                ]}
+            >
                 <TouchableOpacity onPress={() => onNavigate('chat')} style={styles.backButton}>
-                    <BackIcon width={24} height={24} />
+                    <BackIcon width={24} height={24} color={isDark ? '#FFF' : '#000'} />
                 </TouchableOpacity>
 
                 <View style={styles.profileInfoHeader}>
-                    <View style={styles.profileImageSmall}>
+                    <View style={[styles.profileImageSmall, { backgroundColor: '#FEE2E2' }]}>
                         <FemaleIcon width={24} height={24} />
                     </View>
 
-                    <Text style={styles.headerName}>
+                    <Text style={[styles.headerName, { color: isDark ? '#FFFFFF' : '#1E2939' }]}>
                         {chatName}({chatAge})
                     </Text>
                 </View>
 
                 <TouchableOpacity style={styles.menuButton} onPress={() => setShowMenu(!showMenu)}>
-                    <MenuIcon width={24} height={24} />
+                    <MenuIcon width={24} height={24} color={isDark ? '#FFF' : '#000'} />
                 </TouchableOpacity>
             </View>
 
@@ -91,40 +107,54 @@ const ChatDetailScreen: React.FC<ChatDetailScreenProps> = ({ onNavigate, chatNam
                             >
                                 <Text style={styles.myMessageText}>{msg.text}</Text>
                             </LinearGradient>
-                            <Text style={styles.myMessageTime}>{msg.time}</Text>
+
+                            <Text style={[styles.myMessageTime, { color: isDark ? '#A0A0A0' : '#6A7282' }]}>
+                                {msg.time}
+                            </Text>
                         </View>
                     ) : (
                         <View key={msg.id} style={styles.theirMessageContainer}>
-                            <View style={styles.theirMessageBubble}>
-                                <Text style={styles.theirMessageText}>{msg.text}</Text>
+                            <View
+                                style={[
+                                    styles.theirMessageBubble,
+                                    {
+                                        backgroundColor: isDark ? '#1A1A1A' : '#FFFFFF',
+                                        borderColor: isDark ? '#444' : '#0000001A',
+                                    },
+                                ]}
+                            >
+                                <Text style={[styles.theirMessageText, { color: isDark ? '#FFFFFF' : '#1E2939' }]}>
+                                    {msg.text}
+                                </Text>
                             </View>
-                            <Text style={styles.theirMessageTime}>{msg.time}</Text>
+                            <Text style={[styles.theirMessageTime, { color: isDark ? '#888' : '#6A7282' }]}>
+                                {msg.time}
+                            </Text>
                         </View>
                     )
                 )}
             </ScrollView>
 
-            <View style={[styles.inputContainer, { paddingBottom: insets.bottom + 8 }]}>
+            <View
+                style={[
+                    styles.inputContainer,
+                    {
+                        paddingBottom: insets.bottom + 8,
+                        backgroundColor: isDark ? '#0D0D0D' : '#FFFFFF',
+                        borderTopColor: isDark ? '#333' : '#0000001A',
+                    },
+                ]}
+            >
                 <View style={styles.suggestionButtons}>
                     <TouchableOpacity style={styles.suggestionButton}>
-                        <LinearGradient
-                            colors={['#FCE7F3', '#FFE4E6']}
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 0 }}
-                            style={styles.suggestionGradient}
-                        >
+                        <LinearGradient colors={['#FCE7F3', '#FFE4E6']} style={styles.suggestionGradient}>
                             <LightIcon width={16} height={16} />
                             <Text style={styles.suggestionText}>아이스브레이킹 주제</Text>
                         </LinearGradient>
                     </TouchableOpacity>
 
                     <TouchableOpacity style={styles.suggestionButton}>
-                        <LinearGradient
-                            colors={['#FCE7F3', '#FFE4E6']}
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 0 }}
-                            style={styles.suggestionGradient}
-                        >
+                        <LinearGradient colors={['#FCE7F3', '#FFE4E6']} style={styles.suggestionGradient}>
                             <LocationIcon width={16} height={16} />
                             <Text style={styles.suggestionText}>데이트 코스 추천</Text>
                         </LinearGradient>
@@ -133,12 +163,20 @@ const ChatDetailScreen: React.FC<ChatDetailScreenProps> = ({ onNavigate, chatNam
 
                 <View style={styles.messageInputContainer}>
                     <TextInput
-                        style={styles.messageInput}
+                        style={[
+                            styles.messageInput,
+                            {
+                                backgroundColor: isDark ? '#1A1A1A' : '#FFFFFF',
+                                borderColor: isDark ? '#444' : '#D1D5DC',
+                                color: isDark ? '#EEEEEE' : '#000000',
+                            },
+                        ]}
                         value={message}
                         onChangeText={setMessage}
                         placeholder="메시지를 입력하세요"
-                        placeholderTextColor="#0A0A0A80"
+                        placeholderTextColor={isDark ? '#777777' : '#0A0A0A80'}
                     />
+
                     <TouchableOpacity style={styles.sendButton}>
                         <LinearGradient colors={['#F43F5E', '#EC4899']} style={styles.sendButtonGradient}>
                             <SendIcon width={20} height={20} />
@@ -148,15 +186,25 @@ const ChatDetailScreen: React.FC<ChatDetailScreenProps> = ({ onNavigate, chatNam
             </View>
 
             {showMenu && (
-                <View style={styles.dropdownMenu}>
+                <View
+                    style={[
+                        styles.dropdownMenu,
+                        {
+                            backgroundColor: isDark ? '#1A1A1A' : '#FFFFFF',
+                            borderColor: isDark ? '#444' : 'rgba(0,0,0,0.1)',
+                        },
+                    ]}
+                >
                     <TouchableOpacity style={styles.menuItem} onPress={() => setShowMenu(false)}>
                         <ReportIcon width={16} height={16} />
-                        <Text style={styles.menuItemText}>신고하기</Text>
+                        <Text style={[styles.menuItemText, { color: isDark ? '#FF8888' : '#F54900' }]}>신고하기</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity style={styles.menuItem} onPress={() => setShowMenu(false)}>
                         <ExitIcon width={16} height={16} />
-                        <Text style={[styles.menuItemText, styles.exitText]}>채팅방 나가기</Text>
+                        <Text style={[styles.menuItemText, { color: isDark ? '#FF6666' : '#E7000B' }]}>
+                            채팅방 나가기
+                        </Text>
                     </TouchableOpacity>
                 </View>
             )}
@@ -167,7 +215,8 @@ const ChatDetailScreen: React.FC<ChatDetailScreenProps> = ({ onNavigate, chatNam
 };
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#FFFFFF' },
+    container: { flex: 1 },
+
     header: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -175,7 +224,6 @@ const styles = StyleSheet.create({
         paddingVertical: 28,
         height: 96,
         borderBottomWidth: 1.35,
-        borderBottomColor: '#0000001A',
     },
     backButton: {
         width: 24,
@@ -193,11 +241,14 @@ const styles = StyleSheet.create({
         width: 40,
         height: 40,
         borderRadius: 450,
-        backgroundColor: '#FEE2E2',
         justifyContent: 'center',
         alignItems: 'center',
     },
-    headerName: { fontSize: 16, fontWeight: '400', lineHeight: 24, color: '#1E2939' },
+    headerName: {
+        fontSize: 16,
+        fontWeight: '400',
+        lineHeight: 24,
+    },
     menuButton: {
         width: 24,
         height: 24,
@@ -219,10 +270,9 @@ const styles = StyleSheet.create({
         paddingVertical: 10,
         paddingHorizontal: 18,
         borderRadius: 10,
-        maxWidth: '100%',
     },
     myMessageText: { color: '#FFFFFF', fontSize: 16, lineHeight: 24 },
-    myMessageTime: { marginTop: 4, fontSize: 12, color: '#6A7282', textAlign: 'right' },
+    myMessageTime: { marginTop: 4, fontSize: 12, textAlign: 'right' },
 
     theirMessageContainer: {
         alignSelf: 'flex-start',
@@ -230,25 +280,33 @@ const styles = StyleSheet.create({
         maxWidth: '75%',
     },
     theirMessageBubble: {
-        backgroundColor: '#FFFFFF',
         borderWidth: 1.35,
-        borderColor: '#0000001A',
         paddingVertical: 10,
         paddingHorizontal: 17,
         borderRadius: 10,
     },
-    theirMessageText: { fontSize: 16, lineHeight: 24, color: '#1E2939' },
-    theirMessageTime: { marginTop: 4, fontSize: 12, color: '#6A7282', textAlign: 'left' },
+    theirMessageText: { fontSize: 16, lineHeight: 24 },
+    theirMessageTime: {
+        marginTop: 4,
+        fontSize: 12,
+        textAlign: 'left',
+    },
 
     inputContainer: {
         paddingHorizontal: 16,
         paddingTop: 21,
-        backgroundColor: '#FFFFFF',
         borderTopWidth: 1.35,
-        borderTopColor: '#0000001A',
     },
-    suggestionButtons: { flexDirection: 'row', gap: 8, marginBottom: 21 },
-    suggestionButton: { flex: 1, borderRadius: 10, overflow: 'hidden' },
+    suggestionButtons: {
+        flexDirection: 'row',
+        gap: 8,
+        marginBottom: 21,
+    },
+    suggestionButton: {
+        flex: 1,
+        borderRadius: 10,
+        overflow: 'hidden',
+    },
     suggestionGradient: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -257,21 +315,36 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         gap: 2,
     },
-    suggestionText: { fontSize: 14, fontWeight: '400', lineHeight: 20, color: '#C6005C' },
 
-    messageInputContainer: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingBottom: 24 },
+    suggestionText: {
+        fontSize: 14,
+        fontWeight: '400',
+        lineHeight: 20,
+        color: '#C6005C',
+    },
+
+    messageInputContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        paddingBottom: 24,
+    },
     messageInput: {
         flex: 1,
         minHeight: 50,
         paddingVertical: 12,
         paddingHorizontal: 16,
-        backgroundColor: '#FFFFFF',
         borderWidth: 1.35,
-        borderColor: '#D1D5DC',
         borderRadius: 10,
         fontSize: 16,
     },
-    sendButton: { width: 50, height: 50, borderRadius: 10, overflow: 'hidden', backgroundColor: '#FFFFFF' },
+
+    sendButton: {
+        width: 50,
+        height: 50,
+        borderRadius: 10,
+        overflow: 'hidden',
+    },
     sendButtonGradient: {
         width: '100%',
         height: '100%',
@@ -284,10 +357,8 @@ const styles = StyleSheet.create({
         position: 'absolute',
         top: 72,
         right: 24,
-        backgroundColor: '#FFFFFF',
         borderRadius: 10,
         borderWidth: 1.35,
-        borderColor: 'rgba(0,0,0,0.1)',
         paddingVertical: 8,
         paddingHorizontal: 4,
         shadowColor: '#000',
@@ -304,8 +375,10 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
         gap: 8,
     },
-    menuItemText: { fontSize: 16, color: '#F54900', fontWeight: '400' },
-    exitText: { color: '#E7000B' },
+    menuItemText: {
+        fontSize: 16,
+        fontWeight: '400',
+    },
 });
 
 export default ChatDetailScreen;
