@@ -1,5 +1,5 @@
 import React from 'react';
-import { TouchableOpacity, Text, ViewStyle, TextStyle } from 'react-native';
+import { TouchableOpacity, Text, ViewStyle, TextStyle, View } from 'react-native';
 import ChatIcon from '../../assets/chat.svg';
 import RematchIcon from '../../assets/rematch.svg';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -39,37 +39,54 @@ const ButtonView: React.FC<GradientButtonProps> = ({
 
     if (variant === 'outline') {
         return (
-            <TouchableOpacity
-                onPress={onPress}
-                disabled={disabled}
-                activeOpacity={0.7}
-                style={{
-                    ...buttonStyle,
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    paddingHorizontal: 24,
-                    borderWidth: 1.35,
-                    borderColor: disabled ? '#D1D5DB' : '#EC4899',
-                    backgroundColor: 'white',
-                    opacity: disabled ? 0.5 : 1,
-                }}
-            >
-                {icon &&
-                    (icon === 'chatting' ? (
-                        <ChatIcon width={20} height={20} style={{ marginRight: 8 }} />
-                    ) : icon === 'rematching' ? (
-                        <RematchIcon width={20} height={20} style={{ marginRight: 8 }} />
-                    ) : (
-                        <Text style={{ color: '#EC4899', fontWeight: '400', fontSize: 18, marginRight: 8 }}>
-                            {icon}
-                        </Text>
-                    ))}
-                <Text
-                    style={[{ color: disabled ? '#D1D5DB' : '#EC4899', fontWeight: '400', fontSize: 18 }, titleStyle]}
+            <TouchableOpacity onPress={onPress} disabled={disabled} activeOpacity={0.7} style={buttonStyle}>
+                <LinearGradient
+                    colors={disabled ? ['#D1D5DB', '#D1D5DB'] : ['#EC4899', '#F54144']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={{
+                        flex: 1,
+                        borderRadius: BORDER_RADIUS,
+                        padding: 1.35,
+                    }}
                 >
-                    {title}
-                </Text>
+                    <View
+                        style={{
+                            flex: 1,
+                            backgroundColor: 'white',
+                            borderRadius: BORDER_RADIUS - 2,
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            paddingHorizontal: 24,
+                            opacity: disabled ? 0.5 : 1,
+                        }}
+                    >
+                        {icon &&
+                            (icon === 'chatting' ? (
+                                <ChatIcon width={18} height={18} style={{ marginRight: 8 }} />
+                            ) : icon === 'rematching' ? (
+                                <RematchIcon width={18} height={18} style={{ marginRight: 12, paddingBottom: 2 }} />
+                            ) : (
+                                <Text style={{ color: '#EC4899', fontWeight: '400', fontSize: 16, marginRight: 8 }}>
+                                    {icon}
+                                </Text>
+                            ))}
+                        <Text
+                            style={[
+                                {
+                                    color: disabled ? '#D1D5DB' : '#E60076',
+                                    fontWeight: '400',
+                                    fontSize: 16,
+                                    paddingBottom: 2,
+                                },
+                                titleStyle,
+                            ]}
+                        >
+                            {title}
+                        </Text>
+                    </View>
+                </LinearGradient>
             </TouchableOpacity>
         );
     }
@@ -77,7 +94,7 @@ const ButtonView: React.FC<GradientButtonProps> = ({
     return (
         <TouchableOpacity onPress={onPress} disabled={disabled} activeOpacity={0.9} style={buttonStyle}>
             <LinearGradient
-                colors={disabled ? ['#D1D5DB', '#D1D5DB'] : ['#EC4899', '#F54144']} // ← 여기 순서 변경됨
+                colors={disabled ? ['#D1D5DB', '#D1D5DB'] : ['#EC4899', '#F54144']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 style={{
@@ -91,15 +108,15 @@ const ButtonView: React.FC<GradientButtonProps> = ({
             >
                 {icon &&
                     (icon === 'chatting' ? (
-                        <ChatIcon width={20} height={20} style={{ marginRight: 8 }} />
+                        <ChatIcon width={18} height={18} style={{ marginRight: 12, paddingBottom: 2 }} />
                     ) : icon === 'rematching' ? (
-                        <RematchIcon width={20} height={20} style={{ marginRight: 8 }} />
+                        <RematchIcon width={18} height={18} style={{ marginRight: 12 }} />
                     ) : (
-                        <Text style={{ color: 'white', fontWeight: '400', fontSize: 18, marginRight: 8 }}>{icon}</Text>
+                        <Text style={{ color: 'white', fontWeight: '400', fontSize: 16, marginRight: 8 }}>{icon}</Text>
                     ))}
                 <Text
                     style={[
-                        { color: 'white', fontWeight: '400', fontSize: 18, lineHeight: 28, textAlign: 'center' },
+                        { color: 'white', fontWeight: '400', fontSize: 16, lineHeight: 20, textAlign: 'center' },
                         titleStyle,
                     ]}
                 >
