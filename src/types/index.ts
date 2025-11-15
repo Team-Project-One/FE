@@ -1,40 +1,41 @@
-import { ViewStyle, TextStyle } from "react-native";
+import { ViewStyle, TextStyle } from 'react-native';
 
 // ===== 공통 타입 정의 =====
 export type Screen =
-  | "signupLanding"
-  | "signupLogin"
-  | "signupBasic"
-  | "signupDetailed"
-  | "signupSelfIntro"
-  | "signupProfile"
-  | "main"
-  | "home"
-  | "mypage"
-  | "chat"
-  | "chatDetail"
-  | "matchingResult"
-  | "settings"
-  | "profileEdit"
-  | "terms"
-  | "privacy";
+    | 'signupLanding'
+    | 'signupLogin'
+    | 'signupBasic'
+    | 'signupDetailed'
+    | 'signupSelfIntro'
+    | 'signupProfile'
+    | 'main'
+    | 'home'
+    | 'mypage'
+    | 'chat'
+    | 'chatDetail'
+    | 'matchingResult'
+    | 'settings'
+    | 'profileEdit'
+    | 'terms'
+    | 'privacy';
 
 export type NavigationHandler = (screen: Screen, extraData?: any) => void;
 
 // ===== 컴포넌트 Props 타입 =====
 
 export interface AppHeaderProps {
-  title: string;
+    title: string;
 }
 
 export interface BottomNavigationProps {
-  onNavigate: NavigationHandler;
-  currentScreen: Screen;
+    onNavigate: NavigationHandler;
+    currentScreen: Screen;
 }
 
 // ===== 스크린 Props 타입 (공통 패턴) =====
 export interface BaseScreenProps {
-  onNavigate: NavigationHandler;
+    onNavigate: NavigationHandler;
+    routeParams?: any;
 }
 
 // 개별 스크린 Props는 BaseScreenProps를 확장
@@ -42,8 +43,8 @@ export interface MainScreenProps extends BaseScreenProps {}
 export interface MyScreenProps extends BaseScreenProps {}
 export interface ChatScreenProps extends BaseScreenProps {}
 export interface ChatDetailScreenProps extends BaseScreenProps {
-  chatName?: string;
-  chatAge?: number;
+    chatName?: string;
+    chatAge?: number;
 }
 export interface MatchingResultScreenProps extends BaseScreenProps {}
 export interface SettingsScreenProps extends BaseScreenProps {}
@@ -58,21 +59,21 @@ export interface SignupProfileScreenProps extends BaseScreenProps {}
 
 // ===== 폼 데이터 타입 (기존 유지) =====
 export interface SignupBasicFormData {
-  name: string;
-  birthDate: string;
-  gender: string;
+    name: string;
+    birthDate: string;
+    gender: string;
 }
 
 export interface SignupDetailedFormData {
-  job: string;
-  region: string;
-  drinkingFrequency: string;
-  smokingStatus: string;
-  height: string;
-  pets: string;
-  religion: string;
-  contactFrequency: string;
-  mbti: string;
+    job: string;
+    region: string;
+    drinkingFrequency: string;
+    smokingStatus: string;
+    height: string;
+    pets: string;
+    religion: string;
+    contactFrequency: string;
+    mbti: string;
 }
 
 // ===== 유틸리티 타입 =====
