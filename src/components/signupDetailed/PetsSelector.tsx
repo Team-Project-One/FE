@@ -7,15 +7,25 @@ interface PetsSelectorProps {
     value: string;
     onChange: (val: string) => void;
     error?: boolean;
+    bgColor?: string;
+    borderColor?: string;
+    textColor?: string;
 }
 
-const PetsSelector: React.FC<PetsSelectorProps> = ({ value, onChange, error }) => {
+const PetsSelector: React.FC<PetsSelectorProps> = ({
+    value,
+    onChange,
+    error,
+    bgColor = '#FFFFFF',
+    borderColor = '#9CA3AF',
+    textColor = '#364153',
+}) => {
     const hasError = error && !value;
     const toggle = (next: string) => onChange(value === next ? '' : next);
 
     return (
         <View style={styles.inputGroup}>
-            <Text style={styles.label}>반려동물</Text>
+            <Text style={[styles.label, { color: textColor }]}>반려동물</Text>
 
             <View style={styles.twoColumnContainer}>
                 <View style={styles.buttonRow}>
@@ -24,6 +34,9 @@ const PetsSelector: React.FC<PetsSelectorProps> = ({ value, onChange, error }) =
                         selected={value === '없음'}
                         onPress={() => toggle('없음')}
                         error={hasError}
+                        bgColor={bgColor}
+                        borderColor={borderColor}
+                        textColor={textColor}
                     />
 
                     <SelectableButton
@@ -31,6 +44,9 @@ const PetsSelector: React.FC<PetsSelectorProps> = ({ value, onChange, error }) =
                         selected={value === '강아지'}
                         onPress={() => toggle('강아지')}
                         error={hasError}
+                        bgColor={bgColor}
+                        borderColor={borderColor}
+                        textColor={textColor}
                     />
                 </View>
 
@@ -40,6 +56,9 @@ const PetsSelector: React.FC<PetsSelectorProps> = ({ value, onChange, error }) =
                         selected={value === '고양이'}
                         onPress={() => toggle('고양이')}
                         error={hasError}
+                        bgColor={bgColor}
+                        borderColor={borderColor}
+                        textColor={textColor}
                     />
 
                     <SelectableButton
@@ -47,6 +66,9 @@ const PetsSelector: React.FC<PetsSelectorProps> = ({ value, onChange, error }) =
                         selected={value === '기타'}
                         onPress={() => toggle('기타')}
                         error={hasError}
+                        bgColor={bgColor}
+                        borderColor={borderColor}
+                        textColor={textColor}
                     />
                 </View>
             </View>

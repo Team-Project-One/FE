@@ -1,563 +1,384 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from 'react';
 import {
-  StyleSheet,
-  Text,
-  View,
-  ScrollView,
-  TouchableOpacity,
-  TextInput,
-  KeyboardAvoidingView,
-  Platform,
-} from "react-native";
-import BackIcon from "../../assets/back.svg";
-import FemaleIcon from "../../assets/female.svg";
-import LightIcon from "../../assets/light.svg";
-import LocationIcon from "../../assets/location.svg";
-import SendIcon from "../../assets/send.svg";
-import FixIcon from "../../assets/fix.svg";
-import ExitIcon from "../../assets/exit.svg";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { StatusBar } from "expo-status-bar";
-import { BaseScreenProps } from "../types";
-import { LinearGradient } from "expo-linear-gradient";
+    StyleSheet,
+    Text,
+    View,
+    ScrollView,
+    TouchableOpacity,
+    TextInput,
+    KeyboardAvoidingView,
+    Platform,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
+import { LinearGradient } from 'expo-linear-gradient';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+import BackIcon from '../../assets/back.svg';
+import FemaleIcon from '../../assets/female.svg';
+import LightIcon from '../../assets/light.svg';
+import LocationIcon from '../../assets/location.svg';
+import SendIcon from '../../assets/send.svg';
+import ReportIcon from '../assets/reportIcon.svg';
+import ExitIcon from '../../assets/exit.svg';
+import MenuIcon from '../assets/menuIcon.svg';
+
+import ChatTipModal from '../components/ChatTipModal';
+import { BaseScreenProps } from '../types';
+import { useTheme } from '../theme/ThemeContext';
 
 interface ChatDetailScreenProps extends BaseScreenProps {
-  chatName?: string;
-  chatAge?: number;
+    chatName?: string;
+    chatAge?: number;
 }
 
 const mockMessages = [
-  { id: "1", text: "안녕하세요!", time: "오후 3:15", isMe: false },
-  { id: "2", text: "반가워요😊", time: "오후 3:20", isMe: false },
+    { id: '1', text: '안녕하세요!', time: '오후 3:15', isMe: false },
+    { id: '2', text: '반가워요😊', time: '오후 3:20', isMe: true },
 ];
 
-const ChatDetailScreen: React.FC<ChatDetailScreenProps> = ({
-  onNavigate,
-  chatName = "지은",
-  chatAge = 26,
-}) => {
-  const insets = useSafeAreaInsets();
-  const [message, setMessage] = useState("");
-  const [showIceBreaking, setShowIceBreaking] = useState(false);
-  const [showDateCourse, setShowDateCourse] = useState(false);
-  const [showMenu, setShowMenu] = useState(false);
+const ChatDetailScreen: React.FC<ChatDetailScreenProps> = ({ onNavigate, chatName = '지은', chatAge = 26 }) => {
+    const insets = useSafeAreaInsets();
+    const { theme } = useTheme();
+    const isDark = theme === 'dark';
 
-  const iceBreakingTopics = [
-    { icon: "☁️", text: "요즘 가장 관심있는 취미는 무엇인가요?" },
-    { icon: "🎵", text: "좋아하는 음악 장르나 아티스트는?" },
-    { icon: "✈️", text: "가장 가보고 싶은 여행지는?" },
-    { icon: "🍕", text: "제일 좋아하는 음식은 무엇인가요?" },
-  ];
+    const [message, setMessage] = useState('');
+    const [showMenu, setShowMenu] = useState(false);
+    const [tipVisible, setTipVisible] = useState(true);
+    const tipType = 'ice';
 
-  const dateCourses = [
-    { icon: "📍", text: "한강 공원 - 저녁 산책과 야경 감상" },
-    { icon: "🎬", text: "CGV 강남 - 영화 관람 후 카페 투어" },
-    { icon: "🍽️", text: "이태원 맛집 거리 - 다양한 음식 체험" },
-    { icon: "🎨", text: "삼청동 갤러리 투어 - 예술적인 데이트" },
-  ];
+    useEffect(() => {
+        const checkTip = async () => {
+            const viewed = await AsyncStorage.getItem('chat_tip_viewed');
+            if (viewed === 'true') setTipVisible(false);
+        };
+        checkTip();
+    }, []);
 
-  return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-    >
-      <StatusBar style="dark" />
-      {/* Header */}
-      <View style={[styles.header, { marginTop: insets.top }]}>
-        <TouchableOpacity
-          onPress={() => onNavigate("chat")}
-          style={styles.backButton}
+    const closeTip = async () => {
+        setTipVisible(false);
+        await AsyncStorage.setItem('chat_tip_viewed', 'true');
+    };
+
+    return (
+        <KeyboardAvoidingView
+            style={[styles.container, { backgroundColor: isDark ? '#000000' : '#FFFFFF' }]}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
-          <BackIcon width={24} height={24} />
-        </TouchableOpacity>
-        <View style={styles.profileInfoHeader}>
-          <View style={styles.profileImageSmall}>
-            <FemaleIcon width={20} height={20} />
-          </View>
-          <Text style={styles.headerName}>
-            {chatName}({chatAge})
-          </Text>
-        </View>
-        <TouchableOpacity
-          style={styles.menuButton}
-          onPress={() => setShowMenu(!showMenu)}
-        >
-          <Text style={styles.menuIcon}>⋮</Text>
-        </TouchableOpacity>
-      </View>
+            <StatusBar style={isDark ? 'light' : 'dark'} />
 
-      {/* Messages */}
-      <ScrollView
-        style={styles.messagesContainer}
-        contentContainerStyle={styles.messagesContent}
-      >
-        {mockMessages.map((msg) => (
-          <View
-            key={msg.id}
-            style={[
-              styles.messageBubble,
-              msg.isMe ? styles.myMessage : styles.theirMessage,
-            ]}
-          >
-            <Text
-              style={msg.isMe ? styles.myMessageText : styles.theirMessageText}
+            <View
+                style={[
+                    styles.header,
+                    {
+                        marginTop: insets.top,
+                        borderBottomColor: isDark ? '#333' : '#0000001A',
+                    },
+                ]}
             >
-              {msg.text}
-            </Text>
-            <Text style={styles.messageTime}>{msg.time}</Text>
-          </View>
-        ))}
-      </ScrollView>
+                <TouchableOpacity onPress={() => onNavigate('chat')} style={styles.backButton}>
+                    <BackIcon width={24} height={24} color={isDark ? '#FFF' : '#000'} />
+                </TouchableOpacity>
 
-      {/* Input Area */}
-      <View
-        style={[styles.inputContainer, { paddingBottom: insets.bottom + 8 }]}
-      >
-        <View style={styles.suggestionButtons}>
-          <TouchableOpacity
-            style={styles.suggestionButton}
-            onPress={() => setShowIceBreaking(true)}
-            activeOpacity={0.8}
-          >
-            <LinearGradient
-              colors={["#FCE7F3", "#FFE4E6"]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={styles.suggestionGradient}
-            >
-              <LightIcon width={16} height={16} />
-              <Text style={styles.suggestionText}>아이스브레이킹 주제</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.suggestionButton}
-            onPress={() => setShowDateCourse(true)}
-            activeOpacity={0.8}
-          >
-            <LinearGradient
-              colors={["#FCE7F3", "#FFE4E6"]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={styles.suggestionGradient}
-            >
-              <LocationIcon width={16} height={16} />
-              <Text style={styles.suggestionText}>데이트 코스 추천</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-        </View>
+                <View style={styles.profileInfoHeader}>
+                    <View style={[styles.profileImageSmall, { backgroundColor: '#FCCEE8' }]}>
+                        <FemaleIcon width={24} height={24} />
+                    </View>
 
-        <View style={styles.messageInputContainer}>
-          <TextInput
-            style={styles.messageInput}
-            value={message}
-            onChangeText={setMessage}
-            placeholder="메시지를 입력하세요"
-            placeholderTextColor="#9CA3AF"
-          />
-          <TouchableOpacity style={styles.sendButton}>
-            <LinearGradient
-              colors={["#F54144", "#EC4899"]}
-              style={styles.sendButtonGradient}
-            >
-              <SendIcon width={20} height={20} />
-            </LinearGradient>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Dropdown Menu */}
-      {showMenu && (
-        <View style={styles.dropdownMenu}>
-          <TouchableOpacity
-            style={styles.menuItem}
-            onPress={() => {
-              setShowMenu(false);
-              // 채팅창 상단 고정 기능 구현
-            }}
-          >
-            <FixIcon width={20} height={20} />
-            <Text style={styles.menuItemText}>채팅창 상단 고정</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.menuItem}
-            onPress={() => {
-              setShowMenu(false);
-              // 채팅방 나가기 기능 구현
-            }}
-          >
-            <ExitIcon width={20} height={20} />
-            <Text style={[styles.menuItemText, styles.exitText]}>
-              채팅방 나가기
-            </Text>
-          </TouchableOpacity>
-        </View>
-      )}
-
-      {/* Date Course Modal */}
-      {showDateCourse && (
-        <View style={styles.modalOverlay}>
-          <View style={styles.dateCourseModal}>
-            <Text style={styles.dateCourseTitle}>데이트 코스 추천</Text>
-            <View style={styles.coursesList}>
-              {dateCourses.map((course, index) => (
-                <View key={index} style={styles.courseItem}>
-                  <Text style={styles.courseIcon}>{course.icon}</Text>
-                  <Text style={styles.courseText}>{course.text}</Text>
+                    <Text style={[styles.headerName, { color: isDark ? '#FFFFFF' : '#1E2939' }]}>
+                        {chatName}({chatAge})
+                    </Text>
                 </View>
-              ))}
-            </View>
-            <TouchableOpacity
-              style={styles.confirmButton}
-              onPress={() => setShowDateCourse(false)}
-            >
-              <LinearGradient
-                colors={["#F54144", "#EC4899"]}
-                style={styles.confirmButtonGradient}
-              >
-                <Text style={styles.confirmButtonText}>확인</Text>
-              </LinearGradient>
-            </TouchableOpacity>
-          </View>
-        </View>
-      )}
 
-      {/* Ice Breaking Modal */}
-      {showIceBreaking && (
-        <View style={styles.modalOverlay}>
-          <View style={styles.iceBreakingModal}>
-            <Text style={styles.iceBreakingTitle}>
-              아이스브레이킹 주제 추천
-            </Text>
-            <View style={styles.topicsList}>
-              {iceBreakingTopics.map((topic, index) => (
-                <View key={index} style={styles.topicItem}>
-                  <Text style={styles.topicIcon}>{topic.icon}</Text>
-                  <Text style={styles.topicText}>{topic.text}</Text>
-                </View>
-              ))}
+                <TouchableOpacity style={styles.menuButton} onPress={() => setShowMenu(!showMenu)}>
+                    <MenuIcon width={24} height={24} color={isDark ? '#FFF' : '#000'} />
+                </TouchableOpacity>
             </View>
-            <TouchableOpacity
-              style={styles.confirmButton}
-              onPress={() => setShowIceBreaking(false)}
+
+            <ScrollView style={styles.messagesContainer} contentContainerStyle={styles.messagesContent}>
+                {mockMessages.map((msg) =>
+                    msg.isMe ? (
+                        <View key={msg.id} style={styles.myMessageContainer}>
+                            <LinearGradient
+                                colors={['#EC4899', '#F43F5E']}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 0 }}
+                                style={styles.myMessageBubble}
+                            >
+                                <Text style={styles.myMessageText}>{msg.text}</Text>
+                            </LinearGradient>
+
+                            <Text style={[styles.myMessageTime, { color: isDark ? '#A0A0A0' : '#6A7282' }]}>
+                                {msg.time}
+                            </Text>
+                        </View>
+                    ) : (
+                        <View key={msg.id} style={styles.theirMessageContainer}>
+                            <View
+                                style={[
+                                    styles.theirMessageBubble,
+                                    {
+                                        backgroundColor: isDark ? '#1A1A1A' : '#FFFFFF',
+                                        borderColor: isDark ? '#444' : '#0000001A',
+                                    },
+                                ]}
+                            >
+                                <Text style={[styles.theirMessageText, { color: isDark ? '#FFFFFF' : '#1E2939' }]}>
+                                    {msg.text}
+                                </Text>
+                            </View>
+                            <Text style={[styles.theirMessageTime, { color: isDark ? '#888' : '#6A7282' }]}>
+                                {msg.time}
+                            </Text>
+                        </View>
+                    )
+                )}
+            </ScrollView>
+
+            <View
+                style={[
+                    styles.inputContainer,
+                    {
+                        paddingBottom: insets.bottom + 8,
+                        backgroundColor: isDark ? '#0D0D0D' : '#FFFFFF',
+                        borderTopColor: isDark ? '#333' : '#0000001A',
+                    },
+                ]}
             >
-              <LinearGradient
-                colors={["#F54144", "#EC4899"]}
-                style={styles.confirmButtonGradient}
-              >
-                <Text style={styles.confirmButtonText}>확인</Text>
-              </LinearGradient>
-            </TouchableOpacity>
-          </View>
-        </View>
-      )}
-    </KeyboardAvoidingView>
-  );
+                <View style={styles.suggestionButtons}>
+                    <TouchableOpacity style={styles.suggestionButton}>
+                        <LinearGradient colors={['#FCE7F3', '#FFE4E6']} style={styles.suggestionGradient}>
+                            <LightIcon width={16} height={16} />
+                            <Text style={styles.suggestionText}>아이스브레이킹 주제</Text>
+                        </LinearGradient>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity style={styles.suggestionButton}>
+                        <LinearGradient colors={['#FCE7F3', '#FFE4E6']} style={styles.suggestionGradient}>
+                            <LocationIcon width={16} height={16} />
+                            <Text style={styles.suggestionText}>데이트 코스 추천</Text>
+                        </LinearGradient>
+                    </TouchableOpacity>
+                </View>
+
+                <View style={styles.messageInputContainer}>
+                    <TextInput
+                        style={[
+                            styles.messageInput,
+                            {
+                                backgroundColor: isDark ? '#1A1A1A' : '#FFFFFF',
+                                borderColor: isDark ? '#444' : '#D1D5DC',
+                                color: isDark ? '#EEEEEE' : '#000000',
+                            },
+                        ]}
+                        value={message}
+                        onChangeText={setMessage}
+                        placeholder="메시지를 입력하세요"
+                        placeholderTextColor={isDark ? '#777777' : '#0A0A0A80'}
+                    />
+
+                    <TouchableOpacity style={styles.sendButton}>
+                        <LinearGradient colors={['#F43F5E', '#EC4899']} style={styles.sendButtonGradient}>
+                            <SendIcon width={20} height={20} />
+                        </LinearGradient>
+                    </TouchableOpacity>
+                </View>
+            </View>
+
+            {showMenu && (
+                <View
+                    style={[
+                        styles.dropdownMenu,
+                        {
+                            backgroundColor: isDark ? '#1A1A1A' : '#FFFFFF',
+                            borderColor: isDark ? '#444' : 'rgba(0,0,0,0.1)',
+                        },
+                    ]}
+                >
+                    <TouchableOpacity style={styles.menuItem} onPress={() => setShowMenu(false)}>
+                        <ReportIcon width={16} height={16} />
+                        <Text style={[styles.menuItemText, { color: isDark ? '#FF8888' : '#F54900' }]}>신고하기</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity style={styles.menuItem} onPress={() => setShowMenu(false)}>
+                        <ExitIcon width={16} height={16} />
+                        <Text style={[styles.menuItemText, { color: isDark ? '#FF6666' : '#E7000B' }]}>
+                            채팅방 나가기
+                        </Text>
+                    </TouchableOpacity>
+                </View>
+            )}
+
+            <ChatTipModal visible={tipVisible} type={tipType} onClose={closeTip} />
+        </KeyboardAvoidingView>
+    );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#FFFFFF",
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    height: 56,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
-  },
-  backButton: {
-    width: 32,
-    height: 32,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  backButtonImage: {
-    width: 24,
-    height: 24,
-  },
-  profileInfoHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  profileImageSmall: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: "#FEE2E2",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  profileAvatar: {
-    width: 20,
-    height: 20,
-  },
-  headerName: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#1F2937",
-  },
-  menuButton: {
-    width: 32,
-    height: 32,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  menuIcon: {
-    fontSize: 20,
-    color: "#1F2937",
-  },
-  messagesContainer: {
-    flex: 1,
-  },
-  messagesContent: {
-    padding: 16,
-    flexGrow: 1,
-  },
-  messageBubble: {
-    maxWidth: "70%",
-    marginBottom: 12,
-  },
-  myMessage: {
-    alignSelf: "flex-end",
-  },
-  theirMessage: {
-    alignSelf: "flex-start",
-  },
-  myMessageText: {
-    backgroundColor: "#F54144",
-    color: "#FFFFFF",
-    padding: 12,
-    borderRadius: 16,
-    fontSize: 14,
-  },
-  theirMessageText: {
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1.35,
-    borderColor: "#E5E7EB",
-    color: "#1F2937",
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-    fontSize: 14,
-  },
-  messageTime: {
-    fontSize: 10,
-    color: "#9CA3AF",
-    marginTop: 4,
-    textAlign: "left",
-  },
-  inputContainer: {
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    backgroundColor: "#FFFFFF",
-    borderTopWidth: 1.35,
-    borderTopColor: "#0000001A",
-  },
-  suggestionButtons: {
-    flexDirection: "row",
-    gap: 12,
-    marginBottom: 8,
-  },
-  suggestionButton: {
-    flex: 1,
-    minWidth: 0,
-    borderRadius: 10,
-    overflow: "hidden",
-    backgroundColor: "#FFFFFF",
-  },
-  suggestionGradient: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 10,
-    gap: 8,
-  },
-  suggestionIcon: {
-    fontSize: 14,
-  },
-  suggestionIconImage: {
-    width: 16,
-    height: 16,
-  },
-  suggestionText: {
-    fontSize: 12,
-    color: "#C6005C",
-    fontWeight: "500",
-  },
-  messageInputContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  messageInput: {
-    backgroundColor: "#FFFFFF",
-    flex: 1,
-    minHeight: 50.64382553100586,
-    paddingTop: 12,
-    paddingRight: 16,
-    paddingBottom: 12,
-    paddingLeft: 16,
-    borderWidth: 1.35,
-    borderColor: "#E5E7EB",
-    borderRadius: 10,
-    fontSize: 14,
-  },
-  sendButton: {
-    width: 50.64382553100586,
-    height: 50.64382553100586,
-    borderRadius: 10,
-    overflow: "hidden",
-    borderWidth: 1.35,
-    borderColor: "#E5E7EB",
-    backgroundColor: "#FFFFFF",
-  },
-  sendButtonGradient: {
-    width: "100%",
-    height: "100%",
-    justifyContent: "center",
-    alignItems: "center",
-    borderRadius: 10,
-  },
-  sendIcon: {
-    width: 20,
-    height: 20,
-  },
-  modalOverlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "rgba(0, 0, 0, 0.3)",
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 24,
-  },
-  dateCourseModal: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 20,
-    padding: 24,
-    width: "100%",
-    maxWidth: 400,
-  },
-  dateCourseTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#1F2937",
-    marginBottom: 20,
-    textAlign: "center",
-  },
-  coursesList: {
-    marginBottom: 20,
-  },
-  courseItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#F9FAFB",
-    padding: 12,
-    borderRadius: 12,
-    marginBottom: 8,
-    gap: 8,
-  },
-  courseIcon: {
-    fontSize: 20,
-  },
-  courseText: {
-    flex: 1,
-    fontSize: 14,
-    color: "#1F2937",
-  },
-  iceBreakingModal: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 20,
-    padding: 24,
-    width: "100%",
-    maxWidth: 400,
-  },
-  iceBreakingTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#1F2937",
-    marginBottom: 20,
-    textAlign: "center",
-  },
-  topicsList: {
-    marginBottom: 20,
-  },
-  topicItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#FFF0F5",
-    padding: 12,
-    borderRadius: 12,
-    marginBottom: 8,
-    gap: 8,
-  },
-  topicIcon: {
-    fontSize: 20,
-  },
-  topicText: {
-    flex: 1,
-    fontSize: 14,
-    color: "#1F2937",
-  },
-  confirmButton: {
-    borderRadius: 12,
-    overflow: "hidden",
-  },
-  confirmButtonGradient: {
-    paddingVertical: 14,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  confirmButtonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  dropdownMenu: {
-    position: "absolute",
-    top: 80,
-    right: 16,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    paddingVertical: 8,
-    paddingHorizontal: 4,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
+    container: { flex: 1 },
+
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 24,
+        paddingVertical: 28,
+        height: 96,
+        borderBottomWidth: 1.35,
     },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-    minWidth: 180,
-  },
-  menuItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    gap: 12,
-  },
-  menuItemIcon: {
-    width: 20,
-    height: 20,
-  },
-  menuItemText: {
-    fontSize: 14,
-    color: "#1F2937",
-    fontWeight: "500",
-  },
-  exitText: {
-    color: "#EF4444",
-  },
+    backButton: {
+        width: 24,
+        height: 24,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 16,
+    },
+    profileInfoHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
+    profileImageSmall: {
+        width: 40,
+        height: 40,
+        borderRadius: 450,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    headerName: {
+        fontSize: 16,
+        fontWeight: '400',
+        lineHeight: 24,
+    },
+    menuButton: {
+        width: 24,
+        height: 24,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginLeft: 'auto',
+    },
+
+    messagesContainer: { flex: 1 },
+    messagesContent: { padding: 24, flexGrow: 1 },
+
+    myMessageContainer: {
+        alignSelf: 'flex-end',
+        marginBottom: 14,
+        maxWidth: '75%',
+        alignItems: 'flex-end',
+    },
+    myMessageBubble: {
+        paddingVertical: 10,
+        paddingHorizontal: 18,
+        borderRadius: 10,
+    },
+    myMessageText: { color: '#FFFFFF', fontSize: 16, lineHeight: 24 },
+    myMessageTime: { marginTop: 4, fontSize: 12, textAlign: 'right' },
+
+    theirMessageContainer: {
+        alignSelf: 'flex-start',
+        marginBottom: 12,
+        maxWidth: '75%',
+    },
+    theirMessageBubble: {
+        borderWidth: 1.35,
+        paddingVertical: 10,
+        paddingHorizontal: 17,
+        borderRadius: 10,
+    },
+    theirMessageText: { fontSize: 16, lineHeight: 24 },
+    theirMessageTime: {
+        marginTop: 4,
+        fontSize: 12,
+        textAlign: 'left',
+    },
+
+    inputContainer: {
+        paddingHorizontal: 16,
+        paddingTop: 21,
+        borderTopWidth: 1.35,
+    },
+    suggestionButtons: {
+        flexDirection: 'row',
+        gap: 8,
+        marginBottom: 21,
+    },
+    suggestionButton: {
+        flex: 1,
+        borderRadius: 10,
+        overflow: 'hidden',
+    },
+    suggestionGradient: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 14,
+        borderRadius: 10,
+        gap: 2,
+    },
+
+    suggestionText: {
+        fontSize: 14,
+        fontWeight: '400',
+        lineHeight: 20,
+        color: '#C6005C',
+    },
+
+    messageInputContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        paddingBottom: 24,
+    },
+    messageInput: {
+        flex: 1,
+        minHeight: 50,
+        paddingVertical: 12,
+        paddingHorizontal: 16,
+        borderWidth: 1.35,
+        borderRadius: 10,
+        fontSize: 16,
+    },
+
+    sendButton: {
+        width: 50,
+        height: 50,
+        borderRadius: 10,
+        overflow: 'hidden',
+    },
+    sendButtonGradient: {
+        width: '100%',
+        height: '100%',
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderRadius: 10,
+    },
+
+    dropdownMenu: {
+        position: 'absolute',
+        top: 72,
+        right: 24,
+        borderRadius: 10,
+        borderWidth: 1.35,
+        paddingVertical: 8,
+        paddingHorizontal: 4,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.12,
+        shadowRadius: 10,
+        elevation: 12,
+        minWidth: 180,
+    },
+    menuItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 10,
+        paddingHorizontal: 16,
+        gap: 8,
+    },
+    menuItemText: {
+        fontSize: 16,
+        fontWeight: '400',
+    },
 });
 
 export default ChatDetailScreen;

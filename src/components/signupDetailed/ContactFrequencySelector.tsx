@@ -7,14 +7,24 @@ interface ContactFrequencySelectorProps {
     value: string;
     onChange: (val: string) => void;
     error?: boolean;
+    bgColor?: string;
+    borderColor?: string;
+    textColor?: string;
 }
 
-const ContactFrequencySelector: React.FC<ContactFrequencySelectorProps> = ({ value, onChange, error }) => {
+const ContactFrequencySelector: React.FC<ContactFrequencySelectorProps> = ({
+    value,
+    onChange,
+    error,
+    bgColor = '#FFFFFF',
+    borderColor = '#9CA3AF',
+    textColor = '#364153',
+}) => {
     const toggle = (next: string) => onChange(value === next ? '' : next);
 
     return (
         <View style={styles.inputGroup}>
-            <Text style={styles.label}>연락 빈도</Text>
+            <Text style={[styles.label, { color: textColor }]}>연락 빈도</Text>
 
             <View style={styles.twoColumnContainer}>
                 <View style={styles.buttonRow}>
@@ -23,6 +33,9 @@ const ContactFrequencySelector: React.FC<ContactFrequencySelectorProps> = ({ val
                         selected={value === '중요함'}
                         onPress={() => toggle('중요함')}
                         error={error && !value}
+                        bgColor={bgColor}
+                        borderColor={borderColor}
+                        textColor={textColor}
                     />
 
                     <SelectableButton
@@ -30,6 +43,9 @@ const ContactFrequencySelector: React.FC<ContactFrequencySelectorProps> = ({ val
                         selected={value === '중요하지 않음'}
                         onPress={() => toggle('중요하지 않음')}
                         error={error && !value}
+                        bgColor={bgColor}
+                        borderColor={borderColor}
+                        textColor={textColor}
                     />
                 </View>
             </View>

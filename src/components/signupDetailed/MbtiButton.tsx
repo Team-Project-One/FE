@@ -6,16 +6,34 @@ interface Props {
     selected: boolean;
     onPress: () => void;
     error?: boolean;
+
+    // 다크모드 스타일
+    bgColor?: string;
+    borderColor?: string;
+    textColor?: string;
 }
 
-const MbtiButton: React.FC<Props> = ({ label, selected, onPress, error }) => {
+const MbtiButton: React.FC<Props> = ({
+    label,
+    selected,
+    onPress,
+    error,
+    bgColor = '#FFFFFF',
+    borderColor = '#9CA3AF',
+    textColor = '#364153',
+}) => {
     return (
         <TouchableOpacity
             onPress={onPress}
             activeOpacity={0.8}
-            style={[styles.button, selected && styles.selected, error && !selected && styles.errorButton]}
+            style={[
+                styles.button,
+                { backgroundColor: bgColor, borderColor },
+                selected && styles.selected,
+                error && !selected && styles.errorButton,
+            ]}
         >
-            <Text style={[styles.text, selected && styles.textSelected]}>{label}</Text>
+            <Text style={[styles.text, { color: textColor }, selected && styles.textSelected]}>{label}</Text>
         </TouchableOpacity>
     );
 };
@@ -26,8 +44,6 @@ const styles = StyleSheet.create({
         height: 40,
         borderRadius: 10,
         borderWidth: 1.35,
-        borderColor: '#9CA3AF',
-        backgroundColor: '#FFFFFF',
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 8,
@@ -38,15 +54,12 @@ const styles = StyleSheet.create({
     },
     text: {
         fontSize: 14,
-        color: '#364153',
         fontWeight: '400',
     },
     textSelected: {
         color: '#EC4899',
-        fontWeight: '400',
     },
     errorButton: {
-        borderTopColor: '#FB2C36',
         borderColor: '#FB2C36',
     },
 });

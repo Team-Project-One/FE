@@ -7,6 +7,9 @@ interface MbtiSelectorProps {
     value: string;
     onChange: (val: string) => void;
     error?: boolean;
+    bgColor?: string;
+    borderColor?: string;
+    textColor?: string;
 }
 
 const mbtiTypes = [
@@ -28,12 +31,19 @@ const mbtiTypes = [
     'ESFP',
 ];
 
-const MbtiSelector: React.FC<MbtiSelectorProps> = ({ value, onChange, error }) => {
+const MbtiSelector: React.FC<MbtiSelectorProps> = ({
+    value,
+    onChange,
+    error,
+    bgColor = '#FFFFFF',
+    borderColor = '#9CA3AF',
+    textColor = '#364153',
+}) => {
     const toggle = (next: string) => onChange(value === next ? '' : next);
 
     return (
         <View style={styles.inputGroup}>
-            <Text style={styles.label}>MBTI</Text>
+            <Text style={[styles.label, { color: textColor }]}>MBTI</Text>
 
             <View style={styles.mbtiGrid}>
                 {mbtiTypes.map((mbti) => (
@@ -43,6 +53,9 @@ const MbtiSelector: React.FC<MbtiSelectorProps> = ({ value, onChange, error }) =
                         selected={value === mbti}
                         onPress={() => toggle(mbti)}
                         error={error}
+                        bgColor={bgColor}
+                        borderColor={borderColor}
+                        textColor={textColor}
                     />
                 ))}
             </View>

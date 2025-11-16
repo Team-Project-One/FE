@@ -6,6 +6,9 @@ interface RegionSelectorProps {
     value: string;
     onChange: (region: string) => void;
     error?: boolean;
+    bgColor?: string;
+    borderColor?: string;
+    textColor?: string;
 }
 
 const locations = [
@@ -28,28 +31,49 @@ const locations = [
     '제주',
 ];
 
-const RegionSelector: React.FC<RegionSelectorProps> = ({ value, onChange, error }) => {
+const RegionSelector: React.FC<RegionSelectorProps> = ({
+    value,
+    onChange,
+    error,
+    bgColor = '#FFFFFF',
+    borderColor = '#9CA3AF',
+    textColor = '#364153',
+}) => {
     const [visible, setVisible] = useState(false);
 
     return (
         <View style={styles.inputGroup}>
-            <Text style={styles.label}>지역</Text>
+            <Text style={[styles.label, { color: textColor }]}>지역</Text>
 
             <TouchableOpacity
-                style={[styles.input, error && styles.errorButton]}
+                style={[
+                    styles.input,
+                    {
+                        backgroundColor: bgColor,
+                        borderColor: borderColor,
+                    },
+                    error && styles.errorButton,
+                ]}
                 onPress={() => setVisible(true)}
                 activeOpacity={0.8}
             >
-                <Text style={value ? styles.inputText : styles.inputPlaceholder}>{value || '지역을 선택하세요'}</Text>
+                <Text
+                    style={[
+                        value ? styles.inputText : styles.inputPlaceholder,
+                        { color: value ? textColor : textColor + '80' },
+                    ]}
+                >
+                    {value || '지역을 선택하세요'}
+                </Text>
             </TouchableOpacity>
 
             <Modal visible={visible} transparent animationType="slide" onRequestClose={() => setVisible(false)}>
                 <View style={styles.modalOverlay}>
-                    <View style={styles.modalContent}>
+                    <View style={[styles.modalContent, { backgroundColor: bgColor }]}>
                         <View style={styles.modalHeader}>
-                            <Text style={styles.modalTitle}>지역 선택</Text>
+                            <Text style={[styles.modalTitle, { color: textColor }]}>지역 선택</Text>
                             <TouchableOpacity style={styles.modalCloseButton} onPress={() => setVisible(false)}>
-                                <Text style={styles.modalCloseIcon}>✕</Text>
+                                <Text style={[styles.modalCloseIcon, { color: textColor }]}>✕</Text>
                             </TouchableOpacity>
                         </View>
 
@@ -61,16 +85,28 @@ const RegionSelector: React.FC<RegionSelectorProps> = ({ value, onChange, error 
 
                                 return (
                                     <TouchableOpacity
-                                        style={[styles.modalItem, selected && styles.modalItemSelected]}
+                                        style={[
+                                            styles.modalItem,
+                                            { borderColor: borderColor },
+                                            selected && styles.modalItemSelected,
+                                        ]}
                                         onPress={() => {
                                             onChange(item);
                                             setVisible(false);
                                         }}
                                     >
-                                        <Text style={[styles.modalItemText, selected && styles.modalItemTextSelected]}>
+                                        <Text
+                                            style={[
+                                                styles.modalItemText,
+                                                { color: textColor },
+                                                selected && styles.modalItemTextSelected,
+                                            ]}
+                                        >
                                             {item}
                                         </Text>
-                                        {selected && <Text style={styles.modalItemCheck}>✓</Text>}
+                                        {selected && (
+                                            <Text style={[styles.modalItemCheck, { color: textColor }]}>✓</Text>
+                                        )}
                                     </TouchableOpacity>
                                 );
                             }}
