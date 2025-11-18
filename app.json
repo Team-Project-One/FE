@@ -4,14 +4,26 @@
     "slug": "MyFirstApp",
     "version": "1.0.0",
     "orientation": "portrait",
+    "scheme": "divineapp",
+    "deepLinks": ["auth/kakao/callback"],
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true
     },
     "android": {
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.koma0620.MyFirstApp"
     },
-    "web": {}
+    "web": {},
+    "plugins": [
+      "expo-web-browser",
+      [
+        "@react-native-seoul/kakao-login",
+        {
+          "kakaoAppKey": "49911f5c0619015e49536426ed08328f"
+        }
+      ]
+    ]
   }
 }
