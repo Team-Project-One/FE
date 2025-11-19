@@ -7,6 +7,7 @@ import Svg, { Defs, LinearGradient as SvgLinearGradient, Stop, Text as SvgText }
 import ButtonView from '../components/ButtonView';
 import { SignupSelfIntroScreenProps } from '../types';
 import BasicProgressHeader from '../components/signup/BasicProgressHeader';
+import { useSignup } from '../context/SignupContext';
 
 const MAX_LEN = 500;
 
@@ -40,12 +41,14 @@ const GradientText: React.FC<{
 
 const SignupSelfIntroScreen: React.FC<SignupSelfIntroScreenProps> = ({ onNavigate, routeParams }) => {
     const insets = useSafeAreaInsets();
-    const [bio, setBio] = useState('');
+    const { signupData, updateSignupData } = useSignup();
+    const [bio, setBio] = useState(signupData.introduction || '');
 
     const prevProgress = routeParams?.progress ?? 0.5;
     const currentProgress = 0.75;
 
     const handleNext = () => {
+        updateSignupData({ introduction: bio.trim() });
         onNavigate('signupProfile', { progress: currentProgress });
     };
 

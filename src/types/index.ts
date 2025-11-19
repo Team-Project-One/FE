@@ -1,5 +1,3 @@
-import { ViewStyle, TextStyle } from 'react-native';
-
 // ===== 공통 타입 정의 =====
 export type Screen =
     | 'signupLanding'
@@ -58,10 +56,12 @@ export interface SignupSelfIntroScreenProps extends BaseScreenProps {}
 export interface SignupProfileScreenProps extends BaseScreenProps {}
 
 // ===== 폼 데이터 타입 (기존 유지) =====
+export type GenderOption = 'male' | 'female' | '';
+
 export interface SignupBasicFormData {
     name: string;
     birthDate: string;
-    gender: string;
+    gender: GenderOption;
 }
 
 export interface SignupDetailedFormData {
@@ -74,6 +74,19 @@ export interface SignupDetailedFormData {
     religion: string;
     contactFrequency: string;
     mbti: string;
+}
+
+export interface SignupFormState extends SignupBasicFormData, SignupDetailedFormData {
+    kakaoId: string;
+    email: string;
+    sexualOrientation: string;
+    introduction: string;
+    profileImageUri: string | null;
+}
+
+export interface SignupResponse {
+    id: number;
+    name: string;
 }
 
 // ===== 유틸리티 타입 =====

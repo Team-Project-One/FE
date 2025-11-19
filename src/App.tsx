@@ -22,6 +22,7 @@ import PrivacyScreen from './screen/PrivacyScreen';
 
 import { Screen, NavigationHandler } from './types';
 import { ThemeProvider } from './theme/ThemeContext';
+import { SignupProvider } from './context/SignupContext';
 
 interface AppState {
     currentScreen: Screen;
@@ -115,7 +116,9 @@ const App: React.FC = () => {
 
     return (
         <ThemeProvider>
-            <SafeAreaProvider>{renderScreen()}</SafeAreaProvider>
+            <SignupProvider>
+                <SafeAreaProvider>{renderScreen()}</SafeAreaProvider>
+            </SignupProvider>
         </ThemeProvider>
     );
 };

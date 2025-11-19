@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { View, ScrollView, Text } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -17,23 +17,25 @@ import ContactFrequencySelector from '../components/signupDetailed/ContactFreque
 import MbtiSelector from '../components/signupDetailed/MbtiSelector';
 import { SignupDetailedScreenProps, SignupDetailedFormData } from '../types';
 import styles from '../styles/signup/singupDetailedStyles';
+import { useSignup } from '../context/SignupContext';
 
 const SignupDetailedScreen: React.FC<SignupDetailedScreenProps> = ({ onNavigate, routeParams }) => {
     const insets = useSafeAreaInsets();
 
     const prevProgress = routeParams?.progress ?? 0.25;
     const currentProgress = 0.5;
+    const { signupData, updateSignupData } = useSignup();
 
     const [formData, setFormData] = useState<SignupDetailedFormData>({
-        job: '',
-        region: '',
-        drinkingFrequency: '',
-        smokingStatus: '',
-        height: '',
-        pets: '',
-        religion: '',
-        contactFrequency: '',
-        mbti: '',
+        job: signupData.job || '',
+        region: signupData.region || '',
+        drinkingFrequency: signupData.drinkingFrequency || '',
+        smokingStatus: signupData.smokingStatus || '',
+        height: signupData.height || '',
+        pets: signupData.pets || '',
+        religion: signupData.religion || '',
+        contactFrequency: signupData.contactFrequency || '',
+        mbti: signupData.mbti || '',
     });
 
     const [showErrorBanner, setShowErrorBanner] = useState(false);
@@ -63,6 +65,7 @@ const SignupDetailedScreen: React.FC<SignupDetailedScreenProps> = ({ onNavigate,
             setShowErrorBanner(true);
             return;
         }
+        updateSignupData(formData);
         onNavigate('signupSelfIntro', { progress: currentProgress });
     };
 
