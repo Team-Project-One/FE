@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
   StyleSheet,
   Text,
@@ -12,9 +12,10 @@ import { StatusBar } from "expo-status-bar";
 import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { login, KakaoOAuthToken } from "@react-native-seoul/kakao-login";
-import { SignupLoginScreenProps } from "../types";
+import { Screen, SignupLoginScreenProps } from "../types";
 import DivineLogoSvg from "../assets/divine.svg";
 import KakaoLoginSvg from "../assets/kakao-login.svg";
+import { fetchUserStatus } from "../api/user";
 import { useSignup } from "../context/SignupContext";
 
 /**
@@ -23,8 +24,6 @@ import { useSignup } from "../context/SignupContext";
  */
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
-const USER_INFO_ENDPOINT =
-  process.env.EXPO_PUBLIC_USER_INFO_URL || "http://10.0.2.2:8080/api/users/me";
 const KAKAO_MOBILE_LOGIN_ENDPOINT =
   process.env.EXPO_PUBLIC_KAKAO_MOBILE_LOGIN_URL ||
   "http://10.0.2.2:8080/auth/kakao/mobile";
@@ -33,83 +32,7 @@ const SignupLoginScreen: React.FC<SignupLoginScreenProps> = ({
   onNavigate,
 }) => {
   const [isLoading, setIsLoading] = useState(false);
-  const hasFetchedUserInfo = useRef(false);
   const { updateSignupData } = useSignup();
-
-  const fetchUserInfo = useCallback(async (token: string) => {
-    if (hasFetchedUserInfo.current) return;
-    hasFetchedUserInfo.current = true;
-
-    // 타임아웃 설정 (10초)
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000);
-
-    try {
-      console.log("사용자 정보 요청:", USER_INFO_ENDPOINT);
-      const response = await fetch(USER_INFO_ENDPOINT, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        signal: controller.signal,
-      });
-
-      clearTimeout(timeoutId);
-
-      // Content-Type 확인
-      const contentType = response.headers.get("content-type");
-      if (!contentType || !contentType.includes("application/json")) {
-        const text = await response.text();
-        console.error("JSON이 아닌 응답:", {
-          contentType,
-          response: text.substring(0, 200),
-        });
-        throw new Error(`서버가 JSON이 아닌 응답을 반환했습니다: ${contentType}`);
-      }
-
-      const profile = await response.json();
-      console.log("사용자 정보:", profile);
-      
-      // 응답에 status 필드가 있고 에러 상태인 경우
-      if (profile.status !== undefined && (profile.status < 0 || profile.status >= 400)) {
-        // 회원가입 미완료 사용자로 간주 (에러가 아닌 정상적인 경우)
-        console.log("사용자 정보 없음 (회원가입 미완료):", profile.status);
-        throw new Error(`사용자 정보 없음: status ${profile.status}`);
-      }
-
-      // 응답 상태 확인 (HTTP status)
-      if (!response.ok) {
-        const errorText = JSON.stringify(profile);
-        console.error("사용자 정보 호출 실패:", {
-          status: response.status,
-          statusText: response.statusText,
-          response: errorText.substring(0, 200),
-        });
-        throw new Error(`사용자 정보 호출 실패: ${response.status} ${response.statusText}`);
-      }
-    } catch (error: any) {
-      clearTimeout(timeoutId);
-      
-      // 사용자 정보 없음 (회원가입 미완료)인 경우는 정상적인 흐름
-      if (error?.message?.includes("사용자 정보 없음")) {
-        console.log("사용자 정보 없음 - 회원가입 플로우로 이동 예정");
-        throw error;
-      }
-      
-      // 실제 에러인 경우만 에러 로그 출력
-      console.error("사용자 정보 불러오기 오류", error);
-      // JSON 파싱 에러인 경우 더 자세한 정보 제공
-      if (error instanceof SyntaxError && error.message.includes("JSON")) {
-        console.error("JSON 파싱 오류 - 서버가 HTML이나 다른 형식을 반환했을 수 있습니다.");
-      }
-      // 타임아웃 에러인 경우
-      if (error.name === 'AbortError') {
-        console.error("사용자 정보 요청 시간 초과");
-      }
-      // 에러를 다시 던져서 호출하는 쪽에서 처리할 수 있도록 함
-      throw error;
-    }
-  }, []);
 
   const exchangeKakaoToken = useCallback(
     async (kakaoTokens: KakaoOAuthToken) => {
@@ -171,7 +94,6 @@ const SignupLoginScreen: React.FC<SignupLoginScreenProps> = ({
   const handleKakaoLogin = useCallback(async () => {
     try {
       setIsLoading(true);
-      hasFetchedUserInfo.current = false;
       
       // 카카오 로그인 시도
       console.log("카카오 로그인 시작...");
@@ -258,60 +180,21 @@ const SignupLoginScreen: React.FC<SignupLoginScreenProps> = ({
         email: tokens.email ?? "",
       });
 
-      // newUser 값 확인
-      // 다양한 형식의 newUser 값 체크
-      const newUserValue = tokens.newUser ?? tokens.isNewUser ?? tokens.is_new_user;
-      let isNewUser = 
-        newUserValue === true || 
-        newUserValue === "true" || 
-        newUserValue === 1 ||
-        String(newUserValue).toLowerCase() === "true";
-      
-      // 사용자 정보 요청을 먼저 시도하고, 실패하면 회원가입 플로우로 이동
-      let userInfoFetchFailed = false;
+      let targetScreen: Screen = "signupBasic";
+
       try {
-        await fetchUserInfo(tokens.accessToken);
-        console.log("사용자 정보 가져오기 성공");
-      } catch (err: any) {
-        // 사용자 정보 요청이 실패하면 (status: -500 등) 회원가입 미완료로 간주
-        const errorMessage = err?.message || String(err || "");
-        
-        // 사용자 정보 없음은 정상적인 경우 (회원가입 미완료)
-        if (
-          errorMessage.includes("사용자 정보 없음") ||
-          errorMessage.includes("500") || 
-          errorMessage.includes("-500") || 
-          errorMessage.includes("status") ||
-          errorMessage.includes("호출 실패")
-        ) {
-          console.log("사용자 정보 없음 - 회원가입 플로우로 이동");
-          userInfoFetchFailed = true;
-          isNewUser = true; // 회원가입 플로우로 강제 이동
-        } else {
-          // 실제 에러인 경우만 에러 로그 출력
-          console.error("사용자 정보 가져오기 실패:", {
-            message: err?.message,
-            error: err,
-          });
+        const userStatus = await fetchUserStatus(tokens.kakaoId ?? "");
+        console.log("[SignupLogin] user status", userStatus);
+        if (userStatus.userId) {
+          await AsyncStorage.setItem("@auth/userId", String(userStatus.userId));
         }
+        const profileCompleted = userStatus.profileCompleted;
+        targetScreen = profileCompleted ? "home" : "signupBasic";
+      } catch (statusError) {
+        console.error("사용자 상태 확인 실패:", statusError);
+        targetScreen = "signupBasic";
       }
-      
-      console.log("회원가입 플로우 결정:", {
-        tokensNewUser: tokens.newUser,
-        tokensIsNewUser: tokens.isNewUser,
-        newUserValue: newUserValue,
-        newUserType: typeof newUserValue,
-        isNewUser: isNewUser,
-        userInfoFetchFailed: userInfoFetchFailed,
-        navigateTo: isNewUser ? "signupBasic" : "main",
-        allTokenKeys: Object.keys(tokens || {}),
-      });
-      
-      // 네비게이션은 한 번만 실행
-      const targetScreen = isNewUser ? "signupBasic" : "main";
-      console.log("최종 네비게이션:", targetScreen);
-      console.log("onNavigate 함수 타입:", typeof onNavigate);
-      
+        console.log("최종 네비게이션:", targetScreen);
       // 로딩 상태를 먼저 해제한 후 네비게이션
       setIsLoading(false);
       
@@ -332,7 +215,7 @@ const SignupLoginScreen: React.FC<SignupLoginScreenProps> = ({
     } finally {
       setIsLoading(false);
     }
-  }, [exchangeKakaoToken, fetchUserInfo, onNavigate, updateSignupData]);
+  }, [exchangeKakaoToken, onNavigate, updateSignupData]);
 
   return (
     <LinearGradient
