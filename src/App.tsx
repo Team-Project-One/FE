@@ -50,6 +50,7 @@ const App: React.FC = () => {
     if (!fontsLoaded) return null;
 
     const handleNavigation: NavigationHandler = (screen, extraData?: any) => {
+        console.log("handleNavigation 호출:", { screen, extraData, currentScreen: appState.currentScreen });
         if (screen === 'chatDetail' && extraData) {
             setAppState({
                 currentScreen: 'chatDetail',
@@ -63,6 +64,7 @@ const App: React.FC = () => {
                 routeParams: extraData || {},
             });
         }
+        console.log("handleNavigation 완료:", screen);
     };
 
     const renderScreen = () => {
