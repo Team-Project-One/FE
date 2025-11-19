@@ -9,6 +9,9 @@ import { SignupProfileScreenProps } from '../types';
 import BasicProgressHeader from '../components/signup/BasicProgressHeader';
 import ProfileSvg from '../../assets/profile.svg';
 import Svg, { Defs, LinearGradient as SvgLinearGradient, Stop, Text as SvgText } from 'react-native-svg';
+import { useSignup } from '../context/SignupContext';
+import { submitSignup } from '../api/signup';
+import { ApiError } from '../api/client';
 
 const GradientText = ({ text, width, height, fontSize }: any) => {
     return (
@@ -35,9 +38,11 @@ const GradientText = ({ text, width, height, fontSize }: any) => {
 
 const SignupProfileScreen: React.FC<SignupProfileScreenProps> = ({ onNavigate }) => {
     const insets = useSafeAreaInsets();
-    const [profileImage, setProfileImage] = useState<string | null>(null);
+    const { signupData, updateSignupData, resetSignupData } = useSignup();
     const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [modalAnimation] = useState(new Animated.Value(0));
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
     const pickImage = async () => {
         const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -54,7 +59,7 @@ const SignupProfileScreen: React.FC<SignupProfileScreenProps> = ({ onNavigate })
         });
 
         if (!result.canceled && result.assets[0]) {
-            setProfileImage(result.assets[0].uri);
+            updateSignupData({ profileImageUri: result.assets[0].uri });
         }
     };
 
@@ -73,12 +78,26 @@ const SignupProfileScreen: React.FC<SignupProfileScreenProps> = ({ onNavigate })
         }
     }, [showSuccessModal]);
 
-    const handleComplete = () => {
-        setShowSuccessModal(true);
+    const handleComplete = async () => {
+        setErrorMessage(null);
+        setIsSubmitting(true);
+        try {
+            await submitSignup(signupData);
+            setShowSuccessModal(true);
+        } catch (error) {
+            if (error instanceof ApiError || error instanceof Error) {
+                setErrorMessage(error.message);
+            } else {
+                setErrorMessage('회원가입 중 알 수 없는 오류가 발생했습니다.');
+            }
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const handleStart = () => {
         setShowSuccessModal(false);
+        resetSignupData();
         onNavigate('home');
     };
 
@@ -113,8 +132,12 @@ const SignupProfileScreen: React.FC<SignupProfileScreenProps> = ({ onNavigate })
 
                     <View style={styles.profileContainer}>
                         <TouchableOpacity style={styles.profileButton} activeOpacity={0.8} onPress={pickImage}>
-                            {profileImage ? (
-                                <Image source={{ uri: profileImage }} style={styles.profileImage} resizeMode="cover" />
+                            {signupData.profileImageUri ? (
+                                <Image
+                                    source={{ uri: signupData.profileImageUri }}
+                                    style={styles.profileImage}
+                                    resizeMode="cover"
+                                />
                             ) : (
                                 <ProfileSvg width={200} height={200} />
                             )}
@@ -126,7 +149,7 @@ const SignupProfileScreen: React.FC<SignupProfileScreenProps> = ({ onNavigate })
 
                 <View style={[styles.footerContainer, { paddingBottom: 40 }]}>
                     <View style={styles.buttonContainer}>
-                        <ButtonView title="가입 완료" onPress={handleComplete} />
+                        <ButtonView title="가입 완료" onPress={handleComplete} disabled={isSubmitting} />
                     </View>
 
                     <LinearGradient
@@ -135,10 +158,17 @@ const SignupProfileScreen: React.FC<SignupProfileScreenProps> = ({ onNavigate })
                         end={{ x: 1, y: 0 }}
                         style={styles.skipButtonOuter}
                     >
-                        <TouchableOpacity activeOpacity={0.8} onPress={handleComplete} style={styles.skipButtonInner}>
+                        <TouchableOpacity
+                            activeOpacity={0.8}
+                            onPress={handleComplete}
+                            style={[styles.skipButtonInner, isSubmitting && { opacity: 0.6 }]}
+                            disabled={isSubmitting}
+                        >
                             <GradientText text="건너뛰기" width={300} height={26} fontSize={16} />
                         </TouchableOpacity>
                     </LinearGradient>
+
+                    {errorMessage && <Text style={styles.errorText}>{errorMessage}</Text>}
 
                     <Text style={[styles.disclaimerText, { marginTop: 10 }]}>
                         입력하신 정보는 매칭을 위해서만 사용됩니다.
@@ -277,6 +307,12 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: '400',
         color: '#6A7282',
+        textAlign: 'center',
+    },
+    errorText: {
+        marginTop: 16,
+        color: '#F44336',
+        fontSize: 14,
         textAlign: 'center',
     },
 

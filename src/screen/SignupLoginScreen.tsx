@@ -15,6 +15,7 @@ import { login, KakaoOAuthToken } from "@react-native-seoul/kakao-login";
 import { SignupLoginScreenProps } from "../types";
 import DivineLogoSvg from "../assets/divine.svg";
 import KakaoLoginSvg from "../assets/kakao-login.svg";
+import { useSignup } from "../context/SignupContext";
 
 /**
  * 카카오 로그인 화면
@@ -33,6 +34,7 @@ const SignupLoginScreen: React.FC<SignupLoginScreenProps> = ({
 }) => {
   const [isLoading, setIsLoading] = useState(false);
   const hasFetchedUserInfo = useRef(false);
+  const { updateSignupData } = useSignup();
 
   const fetchUserInfo = useCallback(async (token: string) => {
     if (hasFetchedUserInfo.current) return;
@@ -246,6 +248,16 @@ const SignupLoginScreen: React.FC<SignupLoginScreenProps> = ({
         await AsyncStorage.setItem("@auth/refreshToken", tokens.refreshToken);
       }
 
+      updateSignupData({
+        kakaoId:
+          tokens.kakaoId ??
+          tokens.kakao_id ??
+          tokens.userId ??
+          tokens.user_id ??
+          "",
+        email: tokens.email ?? "",
+      });
+
       // newUser 값 확인
       // 다양한 형식의 newUser 값 체크
       const newUserValue = tokens.newUser ?? tokens.isNewUser ?? tokens.is_new_user;
@@ -320,7 +332,7 @@ const SignupLoginScreen: React.FC<SignupLoginScreenProps> = ({
     } finally {
       setIsLoading(false);
     }
-  }, [exchangeKakaoToken, fetchUserInfo, onNavigate]);
+  }, [exchangeKakaoToken, fetchUserInfo, onNavigate, updateSignupData]);
 
   return (
     <LinearGradient

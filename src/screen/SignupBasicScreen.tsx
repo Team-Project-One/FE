@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Text, View, ScrollView, Animated } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -11,17 +11,19 @@ import BasicInputGroup from '../components/signup/BasicInputGroup';
 import BirthDateInput from '../components/signup/BirthDateInput';
 import { SignupBasicScreenProps, SignupBasicFormData } from '../types';
 import styles from '../styles/signup/signupBasicStyles';
+import { useSignup } from '../context/SignupContext';
 
 const SignupBasicScreen: React.FC<SignupBasicScreenProps> = ({ onNavigate, routeParams }) => {
     const insets = useSafeAreaInsets();
 
     const prevProgress = routeParams?.progress ?? 0;
     const currentProgress = 0.25;
+    const { signupData, updateSignupData } = useSignup();
 
     const [formData, setFormData] = useState<SignupBasicFormData>({
-        name: '',
-        birthDate: '',
-        gender: '',
+        name: signupData.name || '',
+        birthDate: signupData.birthDate || '',
+        gender: signupData.gender || '',
     });
 
     const [errors, setErrors] = useState<{ [key: string]: boolean }>({});
@@ -82,8 +84,16 @@ const SignupBasicScreen: React.FC<SignupBasicScreenProps> = ({ onNavigate, route
     };
 
     const handleNext = () => {
-        if (validateForm()) onNavigate('signupDetailed', { progress: currentProgress });
-        else showErrorBannerWithAnimation();
+        if (validateForm()) {
+            updateSignupData({
+                name: formData.name.trim(),
+                birthDate: formData.birthDate,
+                gender: formData.gender,
+            });
+            onNavigate('signupDetailed', { progress: currentProgress });
+        } else {
+            showErrorBannerWithAnimation();
+        }
     };
 
     return (
