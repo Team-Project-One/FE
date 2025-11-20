@@ -17,6 +17,7 @@ import DivineLogoSvg from "../assets/divine.svg";
 import KakaoLoginSvg from "../assets/kakao-login.svg";
 import { fetchUserStatus } from "../api/user";
 import { useSignup } from "../context/SignupContext";
+import { requestTestLogin, JwtTokenResponse } from "../api/auth";
 
 /**
  * 카카오 로그인 화면
@@ -33,6 +34,58 @@ const SignupLoginScreen: React.FC<SignupLoginScreenProps> = ({
 }) => {
   const [isLoading, setIsLoading] = useState(false);
   const { updateSignupData } = useSignup();
+
+  const processLoginTokens = useCallback(
+    async (tokens: JwtTokenResponse): Promise<Screen> => {
+      if (!tokens || !tokens.accessToken) {
+        throw new Error("백엔드에서 액세스 토큰을 받지 못했습니다.");
+      }
+
+      await AsyncStorage.setItem("@auth/accessToken", tokens.accessToken);
+
+      if (tokens.refreshToken) {
+        await AsyncStorage.setItem("@auth/refreshToken", tokens.refreshToken);
+      }
+
+      updateSignupData({
+        kakaoId:
+          tokens.kakaoId ??
+          (tokens as any).kakao_id ??
+          (tokens as any).userId ??
+          (tokens as any).user_id ??
+          "",
+        email: tokens.email ?? "",
+      });
+
+      let targetScreen: Screen = "signupBasic";
+
+      try {
+        const userStatus = await fetchUserStatus(tokens.kakaoId ?? "");
+        console.log("[SignupLogin] user status", userStatus);
+        if (userStatus.userId) {
+          await AsyncStorage.setItem("@auth/userId", String(userStatus.userId));
+        }
+        const profileCompleted = userStatus.profileCompleted;
+        targetScreen = profileCompleted ? "home" : "signupBasic";
+      } catch (statusError) {
+        console.error("사용자 상태 확인 실패:", statusError);
+        targetScreen = "signupBasic";
+      }
+
+      return targetScreen;
+    },
+    [updateSignupData]
+  );
+
+  const navigateToScreen = useCallback(
+    (targetScreen: Screen) => {
+      setTimeout(() => {
+        console.log("네비게이션 실행:", targetScreen);
+        onNavigate(targetScreen);
+      }, 100);
+    },
+    [onNavigate]
+  );
 
   const exchangeKakaoToken = useCallback(
     async (kakaoTokens: KakaoOAuthToken) => {
@@ -154,55 +207,10 @@ const SignupLoginScreen: React.FC<SignupLoginScreenProps> = ({
         throw new Error("백엔드에서 액세스 토큰을 받지 못했습니다.");
       }
 
-      // 백엔드 응답 로그 출력
-      console.log("백엔드 토큰 응답:", {
-        accessToken: tokens.accessToken ? "있음" : "없음",
-        refreshToken: tokens.refreshToken ? "있음" : "없음",
-        newUser: tokens.newUser,
-        newUserType: typeof tokens.newUser,
-        allKeys: Object.keys(tokens || {}),
-        fullResponse: tokens,
-      });
-
-      await AsyncStorage.setItem("@auth/accessToken", tokens.accessToken);
-
-      if (tokens.refreshToken) {
-        await AsyncStorage.setItem("@auth/refreshToken", tokens.refreshToken);
-      }
-
-      updateSignupData({
-        kakaoId:
-          tokens.kakaoId ??
-          tokens.kakao_id ??
-          tokens.userId ??
-          tokens.user_id ??
-          "",
-        email: tokens.email ?? "",
-      });
-
-      let targetScreen: Screen = "signupBasic";
-
-      try {
-        const userStatus = await fetchUserStatus(tokens.kakaoId ?? "");
-        console.log("[SignupLogin] user status", userStatus);
-        if (userStatus.userId) {
-          await AsyncStorage.setItem("@auth/userId", String(userStatus.userId));
-        }
-        const profileCompleted = userStatus.profileCompleted;
-        targetScreen = profileCompleted ? "home" : "signupBasic";
-      } catch (statusError) {
-        console.error("사용자 상태 확인 실패:", statusError);
-        targetScreen = "signupBasic";
-      }
-        console.log("최종 네비게이션:", targetScreen);
-      // 로딩 상태를 먼저 해제한 후 네비게이션
+      const targetScreen = await processLoginTokens(tokens);
+      console.log("최종 네비게이션:", targetScreen);
       setIsLoading(false);
-      
-      // 약간의 지연을 두고 네비게이션 (상태 업데이트가 완료되도록)
-      setTimeout(() => {
-        console.log("네비게이션 실행:", targetScreen);
-        onNavigate(targetScreen);
-      }, 100);
+      navigateToScreen(targetScreen);
     } catch (error: any) {
       console.error("카카오 로그인 오류", error);
       const errorMessage = error?.message || error?.toString() || "알 수 없는 오류가 발생했습니다.";
@@ -215,7 +223,25 @@ const SignupLoginScreen: React.FC<SignupLoginScreenProps> = ({
     } finally {
       setIsLoading(false);
     }
-  }, [exchangeKakaoToken, onNavigate, updateSignupData]);
+  }, [exchangeKakaoToken, navigateToScreen, processLoginTokens]);
+
+  const handleTestLogin = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      console.log("테스트 로그인 시작...");
+      const tokens = await requestTestLogin({ testUserNumber: 2 });
+      const targetScreen = await processLoginTokens(tokens);
+      console.log("테스트 로그인 네비게이션:", targetScreen);
+      setIsLoading(false);
+      navigateToScreen(targetScreen);
+    } catch (error: any) {
+      console.error("테스트 로그인 오류", error);
+      const errorMessage = error?.message || error?.toString() || "테스트 로그인 중 오류가 발생했습니다.";
+      Alert.alert("테스트 로그인 오류", errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [navigateToScreen, processLoginTokens]);
 
   return (
     <LinearGradient
@@ -256,6 +282,16 @@ const SignupLoginScreen: React.FC<SignupLoginScreenProps> = ({
             가입 시 서비스 이용약관 및 개인정보처리방침에 동의한 것으로
             간주됩니다.
           </Text>
+
+          {__DEV__ && (
+            <TouchableOpacity
+              style={styles.testLoginButton}
+              onPress={handleTestLogin}
+              disabled={isLoading}
+            >
+              <Text style={styles.testLoginText}>테스트 로그인 (User B)</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </View>
     </LinearGradient>
@@ -313,6 +349,19 @@ const styles = StyleSheet.create({
     textAlign: "center",
     paddingHorizontal: 36,
     lineHeight: 19.5,
+  },
+  testLoginButton: {
+    marginTop: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+  },
+  testLoginText: {
+    fontSize: 12,
+    color: "#9CA3AF",
+    textAlign: "center",
   },
 });
 

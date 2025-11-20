@@ -1,5 +1,14 @@
-import React, { useState } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ImageBackground, Platform } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import {
+    StyleSheet,
+    Text,
+    View,
+    TouchableOpacity,
+    ImageBackground,
+    Platform,
+    ActivityIndicator,
+    Alert,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { MainScreenProps } from '../types';
@@ -9,6 +18,10 @@ import DivineIcon from '../assets/divine.svg';
 import FortuneCookieIcon from '../assets/fortune-cookie.svg';
 import SirenIcon from '../assets/siren.svg';
 import { LinearGradient } from 'expo-linear-gradient';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { fetchTodayFortune, FortuneDTO } from '../api/fortune';
+import { fetchMyPage } from '../api/mypage';
+import { fetchMatchingResult } from '../api/matching';
 
 const fortuneTexts = {
     총운: [
@@ -46,40 +59,117 @@ const MainScreen: React.FC<MainScreenProps> = ({ onNavigate }) => {
     const [showMatchingWarning, setShowMatchingWarning] = useState(false);
     const [warningChecked, setWarningChecked] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState<keyof typeof fortuneTexts>('총운');
+    const [fortuneData, setFortuneData] = useState<FortuneDTO | null>(null);
+    const [isLoadingFortune, setIsLoadingFortune] = useState(false);
+    const [birthDate, setBirthDate] = useState<string | null>(null);
+    const [isMatching, setIsMatching] = useState(false);
+    const [matchingError, setMatchingError] = useState<string | null>(null);
 
-    const getRandomFortune = (category: keyof typeof fortuneTexts) => {
-        const texts = fortuneTexts[category];
-        return texts[Math.floor(Math.random() * texts.length)];
+    useEffect(() => {
+        const loadBirthDate = async () => {
+            try {
+                const storedId = await AsyncStorage.getItem('@auth/userId');
+                const numericId = storedId ? Number(storedId) : null;
+                if (numericId) {
+                    const userData = await fetchMyPage(numericId);
+                    setBirthDate(userData.birthDate);
+                }
+            } catch (err) {
+                console.error('생년월일 로드 실패', err);
+            }
+        };
+        loadBirthDate();
+    }, []);
+
+    const getFortuneByCategory = (category: keyof typeof fortuneTexts) => {
+        if (!fortuneData) {
+            const texts = fortuneTexts[category];
+            return texts[Math.floor(Math.random() * texts.length)];
+        }
+
+        switch (category) {
+            case '총운':
+                return fortuneData.overallFortune;
+            case '애정운':
+                return fortuneData.loveFortune;
+            case '금전운':
+                return fortuneData.moneyFortune;
+            case '직장운':
+                return fortuneData.careerFortune;
+            default:
+                return '';
+        }
     };
 
-    const handleFortuneClick = () => {
+    const loadFortuneData = async () => {
+        try {
+            setIsLoadingFortune(true);
+            const data = await fetchTodayFortune(birthDate);
+            setFortuneData(data);
+        } catch (err) {
+            console.error('[MainScreen] Fortune load failed', err);
+        } finally {
+            setIsLoadingFortune(false);
+        }
+    };
+
+    const handleFortuneClick = async () => {
         setShowFortune(true);
         setSelectedCategory('총운');
+        if (!fortuneData) {
+            await loadFortuneData();
+        }
     };
 
     const handleCloseFortune = () => {
         setShowFortune(false);
     };
 
-    const handleCategoryChange = (category: keyof typeof fortuneTexts) => {
+    const handleCategoryChange = async (category: keyof typeof fortuneTexts) => {
         setSelectedCategory(category);
+        if (!fortuneData) {
+            await loadFortuneData();
+        }
     };
 
     const handleMatchingClick = () => {
         setShowMatchingWarning(true);
         setWarningChecked(false);
+        setMatchingError(null);
     };
 
-    const handleWarningConfirm = () => {
-        if (warningChecked) {
+    const handleWarningConfirm = async () => {
+        if (!warningChecked || isMatching) return;
+        try {
+            setIsMatching(true);
+            const storedId = await AsyncStorage.getItem('@auth/userId');
+            const numericId = storedId ? Number(storedId) : null;
+            if (!numericId) {
+                Alert.alert('오류', '사용자 정보를 찾을 수 없습니다.');
+                return;
+            }
+            const result = await fetchMatchingResult(numericId);
             setShowMatchingWarning(false);
-            onNavigate('matchingResult');
+            setWarningChecked(false);
+            setMatchingError(null);
+            onNavigate('matchingResult', { matchResult: result });
+        } catch (err) {
+            console.error('[MainScreen] Matching failed', err);
+            const message =
+                err && typeof err === 'object' && 'message' in err && typeof err.message === 'string'
+                    ? err.message
+                    : '매칭 중 문제가 발생했습니다.';
+            setMatchingError(message);
+        } finally {
+            setIsMatching(false);
         }
     };
 
     const handleWarningClose = () => {
+        if (isMatching) return;
         setShowMatchingWarning(false);
         setWarningChecked(false);
+        setMatchingError(null);
     };
 
     return (
@@ -148,7 +238,11 @@ const MainScreen: React.FC<MainScreenProps> = ({ onNavigate }) => {
                             </Text>
 
                             <View style={styles.fortuneBox}>
-                                <Text style={styles.fortuneMessage}>{getRandomFortune(selectedCategory)}</Text>
+                                {isLoadingFortune ? (
+                                    <ActivityIndicator size="small" color="#EC4899" />
+                                ) : (
+                                    <Text style={styles.fortuneMessage}>{getFortuneByCategory(selectedCategory)}</Text>
+                                )}
                             </View>
 
                             <TouchableOpacity onPress={handleCloseFortune} activeOpacity={0.8}>
@@ -206,13 +300,19 @@ const MainScreen: React.FC<MainScreenProps> = ({ onNavigate }) => {
                             <Text style={styles.checkboxText}>주의사항을 확인했습니다.</Text>
                         </TouchableOpacity>
 
-                        <ButtonView
-                            title="완료"
-                            onPress={handleWarningConfirm}
-                            disabled={!warningChecked}
-                            titleStyle={{ paddingBottom: 1 }}
-                            size="medium"
-                        />
+                        <View style={{ alignItems: 'center' }}>
+                            <ButtonView
+                                title={isMatching ? '매칭 중...' : '완료'}
+                                onPress={handleWarningConfirm}
+                                disabled={!warningChecked || isMatching}
+                                titleStyle={{ paddingBottom: 1 }}
+                                size="medium"
+                            />
+                            {isMatching && <ActivityIndicator size="small" color="#EC4899" style={{ marginTop: 12 }} />}
+                            {matchingError && (
+                                <Text style={styles.matchingErrorText}>{matchingError}</Text>
+                            )}
+                        </View>
                     </View>
                 </View>
             )}
@@ -415,6 +515,13 @@ const styles = StyleSheet.create({
     checkmark: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' },
 
     checkboxText: { fontSize: 14, color: '#4A5565' },
+
+    matchingErrorText: {
+        marginTop: 12,
+        color: '#EF4444',
+        fontSize: 13,
+        textAlign: 'center',
+    },
 });
 
 export default MainScreen;
