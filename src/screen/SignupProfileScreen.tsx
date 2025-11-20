@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import ButtonView from '../components/ButtonView';
 import { SignupProfileScreenProps } from '../types';
 import BasicProgressHeader from '../components/signup/BasicProgressHeader';
@@ -82,7 +83,10 @@ const SignupProfileScreen: React.FC<SignupProfileScreenProps> = ({ onNavigate })
         setErrorMessage(null);
         setIsSubmitting(true);
         try {
-            await submitSignup(signupData);
+            const response = await submitSignup(signupData);
+            if (response?.id) {
+                await AsyncStorage.setItem('@auth/userId', String(response.id));
+            }
             setShowSuccessModal(true);
         } catch (error) {
             if (error instanceof ApiError || error instanceof Error) {

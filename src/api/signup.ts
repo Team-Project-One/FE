@@ -80,7 +80,91 @@ const contactFrequencyMap: Record<string, string> = {
 
 const defaultSexualOrientation = 'STRAIGHT';
 
-const mapFieldValue = (field: SignupEnumField, value: string) => {
+// 역방향 매핑 (Enum → 한글)
+const jobReverseMap: Record<string, string> = {
+    UNEMPLOYED: '무직',
+    STUDENT: '학생',
+    EMPLOYEE: '직장인',
+};
+
+const drinkingFrequencyReverseMap: Record<string, string> = {
+    NONE: '안 마심',
+    ONCE_OR_TWICE_PER_WEEK: '주 1회 이하',
+    THREE_TIMES_OR_MORE_PER_WEEK: '주 3회 이상',
+};
+
+const smokingStatusReverseMap: Record<string, string> = {
+    NON_SMOKER: '비흡연',
+    SMOKER: '흡연',
+};
+
+const petPreferenceReverseMap: Record<string, string> = {
+    NONE: '없음',
+    DOG: '강아지',
+    CAT: '고양이',
+    OTHER: '기타',
+};
+
+const religionReverseMap: Record<string, string> = {
+    NONE: '무교',
+    CHRISTIAN: '기독교',
+    CATHOLIC: '천주교',
+    BUDDHIST: '불교',
+    OTHER: '기타',
+};
+
+const contactFrequencyReverseMap: Record<string, string> = {
+    IMPORTANT: '중요함',
+    NOT_IMPORTANT: '중요하지 않음',
+};
+
+const regionReverseMap: Record<string, string> = {
+    SEOUL: '서울',
+    GYEONGGI_DO: '경기',
+    INCHEON: '인천',
+    BUSAN: '부산',
+    DAEGU: '대구',
+    GWANGJU: '광주',
+    DAEJEON: '대전',
+    ULSAN: '울산',
+    SEJONG: '세종',
+    GANGWON_DO: '강원',
+    CHUNGCHEONGBUK_DO: '충북',
+    CHUNGCHEONGNAM_DO: '충남',
+    JEOLLABUK_DO: '전북',
+    JEOLLANAM_DO: '전남',
+    GYEONGSANGBUK_DO: '경북',
+    GYEONGSANGNAM_DO: '경남',
+    JEJU_DO: '제주',
+};
+
+// Enum 값을 한글 값으로 변환하는 함수
+export const mapEnumToDisplayValue = (field: SignupEnumField, enumValue: string | null): string => {
+    if (!enumValue) {
+        return '';
+    }
+
+    const displayValue =
+        field === 'job'
+            ? jobReverseMap[enumValue]
+            : field === 'region'
+            ? regionReverseMap[enumValue]
+            : field === 'drinkingFrequency'
+            ? drinkingFrequencyReverseMap[enumValue]
+            : field === 'smokingStatus'
+            ? smokingStatusReverseMap[enumValue]
+            : field === 'petPreference'
+            ? petPreferenceReverseMap[enumValue]
+            : field === 'religion'
+            ? religionReverseMap[enumValue]
+            : field === 'contactFrequency'
+            ? contactFrequencyReverseMap[enumValue]
+            : enumValue; // mbti, sexualOrientation 등은 그대로 반환
+
+    return displayValue || '';
+};
+
+export const mapFieldValue = (field: SignupEnumField, value: string) => {
     if (!value) {
         throw new Error(`${field} 값이 비어 있습니다.`);
     }

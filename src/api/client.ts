@@ -36,7 +36,13 @@ export class ApiError extends Error {
 interface RequestOptions extends RequestInit {}
 
 export const request = async <T>(path: string, options: RequestOptions = {}): Promise<T> => {
-    const response = await fetch(normalizePath(path), {
+    const url = normalizePath(path);
+    console.log('[API] request:', options.method || 'GET', url);
+    if (options.body) {
+        console.log('[API] request body:', options.body);
+    }
+
+    const response = await fetch(url, {
         ...options,
         headers: {
             Accept: 'application/json',
@@ -44,8 +50,11 @@ export const request = async <T>(path: string, options: RequestOptions = {}): Pr
         },
     });
 
+    console.log('[API] response status:', response.status, response.statusText);
     const data = await parseResponseBody(response);
+    console.log('[API] response data:', data);
 
+    // HTTP 상태 코드 체크
     if (!response.ok) {
         const fallbackMessage = '요청 처리 중 문제가 발생했습니다.';
         const message =
@@ -57,6 +66,24 @@ export const request = async <T>(path: string, options: RequestOptions = {}): Pr
             fallbackMessage;
 
         throw new ApiError(message as string, response.status, data);
+    }
+
+    // 백엔드 커스텀 에러 상태 체크 (HTTP 200이지만 응답 본문에 에러가 있는 경우)
+    if (data && typeof data === 'object' && 'status' in data) {
+        const status = (data as Record<string, unknown>).status;
+        // status가 음수이거나 200이 아닌 경우 에러로 처리
+        if (typeof status === 'number' && (status < 0 || status !== 200)) {
+            const fallbackMessage = '요청 처리 중 문제가 발생했습니다.';
+            const message =
+                (data &&
+                    typeof data === 'object' &&
+                    'message' in data &&
+                    typeof (data as Record<string, unknown>).message === 'string' &&
+                    (data as Record<string, unknown>).message) ||
+                fallbackMessage;
+
+            throw new ApiError(message || fallbackMessage, response.status, data);
+        }
     }
 
     return data as T;

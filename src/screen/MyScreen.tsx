@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Image, Alert, TextInput } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Image, Alert, TextInput, ActivityIndicator } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import BackIcon from '../assets/back.svg';
 import CameraIcon from '../assets/camera.svg';
 import FemaleIcon from '../assets/femaleIcon.svg';
@@ -11,20 +12,11 @@ import AvartarIcon from '../assets/female.svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import * as ImagePicker from 'expo-image-picker';
-import { MyScreenProps } from '../types';
+import { MyPageData, MyScreenProps } from '../types';
 import BottomNavigation from '../components/BottomNavigation';
 import { useTheme } from '../theme/ThemeContext';
-
-const dummyUserData = {
-    name: '김명지',
-    age: 20,
-    gender: 'female',
-    job: '직장인',
-    location: '서울',
-    birthDate: '2005-02-23',
-    mbti: 'ESFP',
-    selfIntroduction: 'LOZOLOZLOZ',
-};
+import { fetchMyPage, updateIntroduction } from '../api/mypage';
+import { ApiError } from '../api/client';
 
 const MyScreen: React.FC<MyScreenProps> = ({ onNavigate }) => {
     const insets = useSafeAreaInsets();
@@ -32,8 +24,42 @@ const MyScreen: React.FC<MyScreenProps> = ({ onNavigate }) => {
     const isDark = theme === 'dark';
 
     const [profilePhoto, setProfilePhoto] = useState('');
-    const [selfIntroduction, setSelfIntroduction] = useState(dummyUserData.selfIntroduction);
+    const [profileData, setProfileData] = useState<MyPageData | null>(null);
+    const [selfIntroduction, setSelfIntroduction] = useState('');
     const [isEditingIntro, setIsEditingIntro] = useState(false);
+    const [isSavingIntro, setIsSavingIntro] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        const loadProfile = async () => {
+            try {
+                setIsLoading(true);
+                const storedId = await AsyncStorage.getItem('@auth/userId');
+                const numericId = storedId ? Number(storedId) : null;
+                if (!numericId) {
+                    setError('로그인 정보를 찾을 수 없습니다.');
+                    setIsLoading(false);
+                    return;
+                }
+                const data = await fetchMyPage(numericId);
+                console.log('[MyScreen] fetched data', data);
+                console.log('[MyScreen] fetched profile', data);
+                setProfileData(data);
+                setSelfIntroduction(data.introduction || '');
+                if (data.profileImagePath) {
+                    setProfilePhoto(data.profileImagePath);
+                }
+            } catch (err) {
+                console.error('마이페이지 정보 조회 실패', err);
+                setError('마이페이지 정보를 불러오지 못했습니다.');
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        loadProfile();
+    }, []);
 
     const handlePhotoUpload = async () => {
         const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -53,6 +79,52 @@ const MyScreen: React.FC<MyScreenProps> = ({ onNavigate }) => {
             setProfilePhoto(result.assets[0].uri);
         }
     };
+
+    const handleSaveIntroduction = async () => {
+        try {
+            setIsSavingIntro(true);
+            const storedId = await AsyncStorage.getItem('@auth/userId');
+            const numericId = storedId ? Number(storedId) : null;
+            if (!numericId) {
+                Alert.alert('오류', '로그인 정보를 찾을 수 없습니다.');
+                setIsSavingIntro(false);
+                return;
+            }
+
+            await updateIntroduction(numericId, selfIntroduction);
+            console.log('[MyScreen] Introduction updated successfully');
+            setIsEditingIntro(false);
+            // 프로필 데이터도 업데이트
+            if (profileData) {
+                setProfileData({ ...profileData, introduction: selfIntroduction });
+            }
+        } catch (err) {
+            console.error('[MyScreen] Introduction update failed', err);
+            if (err instanceof ApiError || err instanceof Error) {
+                Alert.alert('오류', err.message || '자기소개 수정 중 오류가 발생했습니다.');
+            } else {
+                Alert.alert('오류', '자기소개 수정 중 알 수 없는 오류가 발생했습니다.');
+            }
+        } finally {
+            setIsSavingIntro(false);
+        }
+    };
+
+    if (isLoading) {
+        return (
+            <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+                <ActivityIndicator size="large" color="#EC4899" />
+            </View>
+        );
+    }
+
+    if (error || !profileData) {
+        return (
+            <View style={[styles.container, { justifyContent: 'center', alignItems: 'center', paddingHorizontal: 24 }]}>
+                <Text style={{ color: isDark ? '#FFF' : '#111', textAlign: 'center' }}>{error || '정보를 불러올 수 없습니다.'}</Text>
+            </View>
+        );
+    }
 
     return (
         <View style={[styles.container, { backgroundColor: isDark ? '#111' : '#FFFFFF' }]}>
@@ -98,14 +170,14 @@ const MyScreen: React.FC<MyScreenProps> = ({ onNavigate }) => {
                     {/* Name + Gender */}
                     <View style={styles.nameContainer}>
                         <Text style={[styles.userName, { color: isDark ? '#FFFFFF' : '#1F2937' }]}>
-                            {dummyUserData.name}({dummyUserData.age})
+                            {profileData.name}
                         </Text>
 
-                        <FemaleIcon width={24} height={24} style={{ paddingTop: 2 }} />
+                        {profileData.gender === 'FEMALE' && <FemaleIcon width={24} height={24} style={{ paddingTop: 2 }} />}
                     </View>
 
                     <Text style={[styles.userDetails, { color: isDark ? '#BBBBBB' : '#4A5565' }]}>
-                        {dummyUserData.job} · {dummyUserData.location}
+                        {profileData.job || '직업 미설정'} · {profileData.region || '지역 미설정'}
                     </Text>
                 </View>
 
@@ -115,7 +187,7 @@ const MyScreen: React.FC<MyScreenProps> = ({ onNavigate }) => {
                         <Text style={[styles.detailLabel, { color: isDark ? '#AAA' : '#6A7282' }]}>생년월일</Text>
 
                         <Text style={[styles.detailText, { color: isDark ? '#FFF' : '#1E2939' }]}>
-                            {dummyUserData.birthDate}
+                            {profileData.birthDate || '생년월일 미설정'}
                         </Text>
                     </View>
 
@@ -123,7 +195,7 @@ const MyScreen: React.FC<MyScreenProps> = ({ onNavigate }) => {
                         <Text style={[styles.detailLabel, { color: isDark ? '#AAA' : '#6A7282' }]}>MBTI</Text>
 
                         <Text style={[styles.detailText, { color: isDark ? '#FFF' : '#1E2939' }]}>
-                            {dummyUserData.mbti}
+                            {profileData.mbti || 'MBTI 미설정'}
                         </Text>
                     </View>
                 </View>
@@ -133,11 +205,29 @@ const MyScreen: React.FC<MyScreenProps> = ({ onNavigate }) => {
                     <View style={styles.introHeaderRow}>
                         <Text style={[styles.introLabel, { color: isDark ? '#FFFFFF' : '#1E2939' }]}>자기소개</Text>
 
-                        <TouchableOpacity style={styles.editButton} onPress={() => setIsEditingIntro(!isEditingIntro)}>
+                        <TouchableOpacity
+                            style={styles.editButton}
+                            onPress={async () => {
+                                if (isEditingIntro) {
+                                    // 완료 버튼 클릭 시 API 호출
+                                    await handleSaveIntroduction();
+                                } else {
+                                    // 수정 버튼 클릭 시 편집 모드로 전환
+                                    setIsEditingIntro(true);
+                                }
+                            }}
+                            disabled={isSavingIntro}
+                        >
                             {isEditingIntro ? (
                                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                                    <PencilIcon width={18} height={18} color="#EC4899" />
-                                    <Text style={[styles.editButtonText, { color: '#EC4899' }]}>완료</Text>
+                                    {isSavingIntro ? (
+                                        <ActivityIndicator size="small" color="#EC4899" />
+                                    ) : (
+                                        <>
+                                            <PencilIcon width={18} height={18} color="#EC4899" />
+                                            <Text style={[styles.editButtonText, { color: '#EC4899' }]}>완료</Text>
+                                        </>
+                                    )}
                                 </View>
                             ) : (
                                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
@@ -171,7 +261,7 @@ const MyScreen: React.FC<MyScreenProps> = ({ onNavigate }) => {
                             />
                         ) : (
                             <Text style={[styles.introText, { color: isDark ? '#CCC' : '#364153' }]}>
-                                {selfIntroduction}
+                        {selfIntroduction || '자기소개가 없습니다.'}
                             </Text>
                         )}
                     </View>
@@ -212,9 +302,7 @@ const MyScreen: React.FC<MyScreenProps> = ({ onNavigate }) => {
             </ScrollView>
 
             {/* Bottom Navigation */}
-            <View style={{ paddingBottom: insets.bottom }}>
-                <BottomNavigation onNavigate={onNavigate} currentScreen={'mypage'} />
-            </View>
+            <BottomNavigation onNavigate={onNavigate} currentScreen={'mypage'} />
         </View>
     );
 };

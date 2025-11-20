@@ -89,6 +89,30 @@ export interface SignupResponse {
     name: string;
 }
 
+export interface UserStatus {
+    userId: number | null;
+    profileCompleted: boolean;
+}
+
+export interface MyPageData {
+    userId: number;
+    name: string;
+    birthDate: string | null;
+    gender: string | null;
+    sexualOrientation: string | null;
+    job: string | null;
+    region: string | null;
+    drinkingFrequency: string | null;
+    smokingStatus: string | null;
+    height: number | null;
+    petPreference: string | null;
+    religion: string | null;
+    contactFrequency: string | null;
+    mbti: string | null;
+    introduction: string | null;
+    profileImagePath: string | null;
+}
+
 // ===== 유틸리티 타입 =====
 export type Optional<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
 export type RequiredFields<T, K extends keyof T> = T & Required<Pick<T, K>>;

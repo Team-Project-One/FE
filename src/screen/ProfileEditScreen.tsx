@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
-import { View, ScrollView, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, ScrollView, Text, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import ButtonView from '../components/ButtonView';
 
 import JobSelector from '../components/signupDetailed/JobSelector';
@@ -18,6 +19,9 @@ import { SignupDetailedScreenProps, SignupDetailedFormData } from '../types';
 import styles from '../styles/signup/singupDetailedStyles';
 import BackIcon from '../assets/back.svg';
 import { useTheme } from '../theme/ThemeContext';
+import { fetchMyPage, updateProfile } from '../api/mypage';
+import { mapEnumToDisplayValue } from '../api/signup';
+import { ApiError } from '../api/client';
 
 const ProfileEditScreen: React.FC<SignupDetailedScreenProps> = ({ onNavigate }) => {
     const insets = useSafeAreaInsets();
@@ -35,13 +39,78 @@ const ProfileEditScreen: React.FC<SignupDetailedScreenProps> = ({ onNavigate }) 
         contactFrequency: '',
         mbti: '',
     });
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // DB에서 프로필 데이터를 가져와서 formData에 설정
+    useEffect(() => {
+        const loadProfileData = async () => {
+            try {
+                const storedId = await AsyncStorage.getItem('@auth/userId');
+                const numericId = storedId ? Number(storedId) : null;
+                if (!numericId) {
+                    console.error('로그인 정보를 찾을 수 없습니다.');
+                    return;
+                }
+                const data = await fetchMyPage(numericId);
+                console.log('[ProfileEditScreen] fetched data', data);
+                
+                // DB 데이터를 formData 형식으로 변환 (Enum → 한글)
+                setFormData({
+                    job: mapEnumToDisplayValue('job', data.job),
+                    region: mapEnumToDisplayValue('region', data.region),
+                    drinkingFrequency: mapEnumToDisplayValue('drinkingFrequency', data.drinkingFrequency),
+                    smokingStatus: mapEnumToDisplayValue('smokingStatus', data.smokingStatus),
+                    height: data.height ? String(data.height) : '',
+                    pets: mapEnumToDisplayValue('petPreference', data.petPreference),
+                    religion: mapEnumToDisplayValue('religion', data.religion),
+                    contactFrequency: mapEnumToDisplayValue('contactFrequency', data.contactFrequency),
+                    mbti: data.mbti || '',
+                });
+            } catch (err) {
+                console.error('프로필 정보 조회 실패', err);
+            }
+        };
+
+        loadProfileData();
+    }, []);
 
     const handleChange = (field: keyof SignupDetailedFormData, value: string) => {
         setFormData((prev) => ({ ...prev, [field]: value }));
     };
 
-    const handleComplete = () => {
-        onNavigate('mypage');
+    const handleComplete = async () => {
+        console.log('[ProfileEditScreen] handleComplete called');
+        console.log('[ProfileEditScreen] formData:', formData);
+        try {
+            setIsSubmitting(true);
+            const storedId = await AsyncStorage.getItem('@auth/userId');
+            const numericId = storedId ? Number(storedId) : null;
+            if (!numericId) {
+                console.error('[ProfileEditScreen] No userId found');
+                Alert.alert('오류', '로그인 정보를 찾을 수 없습니다.');
+                setIsSubmitting(false);
+                return;
+            }
+
+            console.log('[ProfileEditScreen] Calling updateProfile with userId:', numericId);
+            await updateProfile(numericId, formData);
+            console.log('[ProfileEditScreen] Profile updated successfully');
+            Alert.alert('성공', '프로필이 수정되었습니다.', [
+                {
+                    text: '확인',
+                    onPress: () => onNavigate('mypage'),
+                },
+            ]);
+        } catch (err) {
+            console.error('[ProfileEditScreen] Profile update failed', err);
+            if (err instanceof ApiError || err instanceof Error) {
+                Alert.alert('오류', err.message || '프로필 수정 중 오류가 발생했습니다.');
+            } else {
+                Alert.alert('오류', '프로필 수정 중 알 수 없는 오류가 발생했습니다.');
+            }
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     // 다크모드 컬러셋
@@ -169,7 +238,13 @@ const ProfileEditScreen: React.FC<SignupDetailedScreenProps> = ({ onNavigate }) 
                 ]}
             >
                 <View style={styles.buttonContainer}>
-                    <ButtonView title="완료" onPress={handleComplete} />
+                    {isSubmitting ? (
+                        <View style={{ paddingVertical: 16, alignItems: 'center' }}>
+                            <ActivityIndicator size="small" color={isDark ? '#FFFFFF' : '#1F2937'} />
+                        </View>
+                    ) : (
+                        <ButtonView title="완료" onPress={handleComplete} />
+                    )}
                 </View>
 
                 <Text
