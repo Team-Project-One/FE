@@ -114,9 +114,7 @@ const MainScreen: React.FC<MainScreenProps> = ({ onNavigate }) => {
                 </View>
             </ImageBackground>
 
-            <View style={{ paddingBottom: insets.bottom }}>
-                <BottomNavigation onNavigate={onNavigate} currentScreen={'main'} />
-            </View>
+            <BottomNavigation onNavigate={onNavigate} currentScreen={'main'} />
 
             {showFortune && (
                 <View style={styles.modalOverlay}>

@@ -27,7 +27,7 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({ onNavigate, current
             style={[
                 styles.bottomNav,
                 {
-                    paddingBottom: 16 + insets.bottom,
+                    paddingBottom: Math.max(insets.bottom, 16),
                     backgroundColor: isDark ? '#0D0D0D' : '#FFFFFF',
                     borderTopColor: isDark ? '#333333' : 'rgba(0,0,0,0.1)',
                 },

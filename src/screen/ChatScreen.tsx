@@ -119,9 +119,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ onNavigate }) => {
                 ))}
             </ScrollView>
 
-            <View style={{ paddingBottom: insets.bottom }}>
-                <BottomNavigation onNavigate={onNavigate} currentScreen={'chat'} />
-            </View>
+            <BottomNavigation onNavigate={onNavigate} currentScreen={'chat'} />
         </View>
     );
 };

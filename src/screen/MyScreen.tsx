@@ -15,7 +15,8 @@ import * as ImagePicker from 'expo-image-picker';
 import { MyPageData, MyScreenProps } from '../types';
 import BottomNavigation from '../components/BottomNavigation';
 import { useTheme } from '../theme/ThemeContext';
-import { fetchMyPage } from '../api/mypage';
+import { fetchMyPage, updateIntroduction } from '../api/mypage';
+import { ApiError } from '../api/client';
 
 const MyScreen: React.FC<MyScreenProps> = ({ onNavigate }) => {
     const insets = useSafeAreaInsets();
@@ -26,6 +27,7 @@ const MyScreen: React.FC<MyScreenProps> = ({ onNavigate }) => {
     const [profileData, setProfileData] = useState<MyPageData | null>(null);
     const [selfIntroduction, setSelfIntroduction] = useState('');
     const [isEditingIntro, setIsEditingIntro] = useState(false);
+    const [isSavingIntro, setIsSavingIntro] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -75,6 +77,36 @@ const MyScreen: React.FC<MyScreenProps> = ({ onNavigate }) => {
 
         if (!result.canceled && result.assets[0]) {
             setProfilePhoto(result.assets[0].uri);
+        }
+    };
+
+    const handleSaveIntroduction = async () => {
+        try {
+            setIsSavingIntro(true);
+            const storedId = await AsyncStorage.getItem('@auth/userId');
+            const numericId = storedId ? Number(storedId) : null;
+            if (!numericId) {
+                Alert.alert('오류', '로그인 정보를 찾을 수 없습니다.');
+                setIsSavingIntro(false);
+                return;
+            }
+
+            await updateIntroduction(numericId, selfIntroduction);
+            console.log('[MyScreen] Introduction updated successfully');
+            setIsEditingIntro(false);
+            // 프로필 데이터도 업데이트
+            if (profileData) {
+                setProfileData({ ...profileData, introduction: selfIntroduction });
+            }
+        } catch (err) {
+            console.error('[MyScreen] Introduction update failed', err);
+            if (err instanceof ApiError || err instanceof Error) {
+                Alert.alert('오류', err.message || '자기소개 수정 중 오류가 발생했습니다.');
+            } else {
+                Alert.alert('오류', '자기소개 수정 중 알 수 없는 오류가 발생했습니다.');
+            }
+        } finally {
+            setIsSavingIntro(false);
         }
     };
 
@@ -173,11 +205,29 @@ const MyScreen: React.FC<MyScreenProps> = ({ onNavigate }) => {
                     <View style={styles.introHeaderRow}>
                         <Text style={[styles.introLabel, { color: isDark ? '#FFFFFF' : '#1E2939' }]}>자기소개</Text>
 
-                        <TouchableOpacity style={styles.editButton} onPress={() => setIsEditingIntro(!isEditingIntro)}>
+                        <TouchableOpacity
+                            style={styles.editButton}
+                            onPress={async () => {
+                                if (isEditingIntro) {
+                                    // 완료 버튼 클릭 시 API 호출
+                                    await handleSaveIntroduction();
+                                } else {
+                                    // 수정 버튼 클릭 시 편집 모드로 전환
+                                    setIsEditingIntro(true);
+                                }
+                            }}
+                            disabled={isSavingIntro}
+                        >
                             {isEditingIntro ? (
                                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                                    <PencilIcon width={18} height={18} color="#EC4899" />
-                                    <Text style={[styles.editButtonText, { color: '#EC4899' }]}>완료</Text>
+                                    {isSavingIntro ? (
+                                        <ActivityIndicator size="small" color="#EC4899" />
+                                    ) : (
+                                        <>
+                                            <PencilIcon width={18} height={18} color="#EC4899" />
+                                            <Text style={[styles.editButtonText, { color: '#EC4899' }]}>완료</Text>
+                                        </>
+                                    )}
                                 </View>
                             ) : (
                                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
@@ -252,9 +302,7 @@ const MyScreen: React.FC<MyScreenProps> = ({ onNavigate }) => {
             </ScrollView>
 
             {/* Bottom Navigation */}
-            <View style={{ paddingBottom: insets.bottom }}>
-                <BottomNavigation onNavigate={onNavigate} currentScreen={'mypage'} />
-            </View>
+            <BottomNavigation onNavigate={onNavigate} currentScreen={'mypage'} />
         </View>
     );
 };
