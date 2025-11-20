@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ImageBackground, Platform } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, Text, View, TouchableOpacity, ImageBackground, Platform, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MainScreenProps } from '../types';
 import BottomNavigation from '../components/BottomNavigation';
 import ButtonView from '../components/ButtonView';
@@ -9,6 +10,9 @@ import DivineIcon from '../assets/divine.svg';
 import FortuneCookieIcon from '../assets/fortune-cookie.svg';
 import SirenIcon from '../assets/siren.svg';
 import { LinearGradient } from 'expo-linear-gradient';
+import { fetchTodayFortune, FortuneDTO } from '../api/fortune';
+import { fetchMyPage } from '../api/mypage';
+import { ApiError } from '../api/client';
 
 const fortuneTexts = {
     총운: [
@@ -46,24 +50,86 @@ const MainScreen: React.FC<MainScreenProps> = ({ onNavigate }) => {
     const [showMatchingWarning, setShowMatchingWarning] = useState(false);
     const [warningChecked, setWarningChecked] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState<keyof typeof fortuneTexts>('총운');
+    const [fortuneData, setFortuneData] = useState<FortuneDTO | null>(null);
+    const [isLoadingFortune, setIsLoadingFortune] = useState(false);
+    const [birthDate, setBirthDate] = useState<string | null>(null);
 
-    const getRandomFortune = (category: keyof typeof fortuneTexts) => {
-        const texts = fortuneTexts[category];
-        return texts[Math.floor(Math.random() * texts.length)];
+    // 생년월일 가져오기
+    useEffect(() => {
+        const loadBirthDate = async () => {
+            try {
+                const storedId = await AsyncStorage.getItem('@auth/userId');
+                const numericId = storedId ? Number(storedId) : null;
+                if (numericId) {
+                    const userData = await fetchMyPage(numericId);
+                    setBirthDate(userData.birthDate);
+                }
+            } catch (err) {
+                console.error('생년월일 로드 실패', err);
+            }
+        };
+        loadBirthDate();
+    }, []);
+
+    const getFortuneByCategory = (category: keyof typeof fortuneTexts): string => {
+        if (!fortuneData) {
+            // API 데이터가 없으면 기존 랜덤 텍스트 사용
+            const texts = fortuneTexts[category];
+            return texts[Math.floor(Math.random() * texts.length)];
+        }
+
+        // API 데이터에서 카테고리별 운세 반환
+        switch (category) {
+            case '총운':
+                return fortuneData.overallFortune;
+            case '애정운':
+                return fortuneData.loveFortune;
+            case '금전운':
+                return fortuneData.moneyFortune;
+            case '직장운':
+                return fortuneData.careerFortune;
+            default:
+                return '';
+        }
     };
 
-    const handleFortuneClick = () => {
+    const handleFortuneClick = async () => {
         setShowFortune(true);
         setSelectedCategory('총운');
+        
+        // 운세 데이터가 없으면 API 호출
+        if (!fortuneData) {
+            await loadFortuneData();
+        }
+    };
+
+    const loadFortuneData = async () => {
+        try {
+            setIsLoadingFortune(true);
+            const data = await fetchTodayFortune(birthDate);
+            console.log('[MainScreen] Fortune data loaded', data);
+            setFortuneData(data);
+        } catch (err) {
+            console.error('[MainScreen] Fortune load failed', err);
+            // 에러 발생 시 기존 랜덤 텍스트 사용
+        } finally {
+            setIsLoadingFortune(false);
+        }
+    };
+
+    const handleCategoryChange = async (category: keyof typeof fortuneTexts) => {
+        setSelectedCategory(category);
+        
+        // 운세 데이터가 없으면 API 호출
+        if (!fortuneData) {
+            await loadFortuneData();
+        }
     };
 
     const handleCloseFortune = () => {
         setShowFortune(false);
     };
 
-    const handleCategoryChange = (category: keyof typeof fortuneTexts) => {
-        setSelectedCategory(category);
-    };
 
     const handleMatchingClick = () => {
         setShowMatchingWarning(true);
@@ -148,7 +214,11 @@ const MainScreen: React.FC<MainScreenProps> = ({ onNavigate }) => {
                             </Text>
 
                             <View style={styles.fortuneBox}>
-                                <Text style={styles.fortuneMessage}>{getRandomFortune(selectedCategory)}</Text>
+                                {isLoadingFortune ? (
+                                    <ActivityIndicator size="small" color="#EC4899" />
+                                ) : (
+                                    <Text style={styles.fortuneMessage}>{getFortuneByCategory(selectedCategory)}</Text>
+                                )}
                             </View>
 
                             <TouchableOpacity onPress={handleCloseFortune} activeOpacity={0.8}>
