@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Image } from 'react-native';
 import BackIcon from '../../assets/back.svg';
 import MaleIcon from '../../assets/male.svg';
@@ -10,38 +10,93 @@ import { MatchingResultScreenProps } from '../types';
 import BottomNavigation from '../components/BottomNavigation';
 import ButtonView from '../components/ButtonView';
 import { useTheme } from '../theme/ThemeContext';
+import { MatchingResult } from '../api/matching';
+import { mapEnumToDisplayValue } from '../api/signup';
 
-const mockMatchData = {
-    name: '지은',
-    age: 26,
-    gender: 'female',
-    job: '디자이너',
-    location: '강남구',
-    originalScore: 85.123,
-    finalScore: 92.456,
-    stressScore: 23.789,
-    mbti: 'ENFP',
-    drinking: '주 1회 이하',
-    sexualOrientation: '이성애자',
-    pets: '고양이',
-    height: '168cm',
-    education: '학생',
-    contactfrequency: '중요함',
-    religion: '무교',
-    smoking: '비흡연',
-    profileImage:
-        'https://images.unsplash.com/photo-1708000609854-72c89a2fb689?crop=entropy&cs=tinysrgb&fit=max&fm=jpg',
-    selfIntroduction:
-        '안녕하세요! 따뜻한 사람과 진솔한 대화를 나누며 함께 성장하는 관계를 원합니다. 영화와 카페 투어를 좋아하고, 주말에는 요리하는 것을 즐겨요.',
+const genderLabelMap: Record<string, { label: string; icon: 'male' | 'female' }> = {
+    MALE: { label: '남성', icon: 'male' },
+    FEMALE: { label: '여성', icon: 'female' },
 };
 
-const MatchingResultScreen: React.FC<MatchingResultScreenProps> = ({ onNavigate }) => {
+const sexualOrientationMap: Record<string, string> = {
+    STRAIGHT: '이성애자',
+    HOMOSEXUAL: '동성애자',
+};
+
+const formatEnumValue = (field: Parameters<typeof mapEnumToDisplayValue>[0], value: string | null | undefined) =>
+    mapEnumToDisplayValue(field, value ?? null) || '정보 없음';
+
+const getAgeFromBirth = (birthDate?: string | null) => {
+    if (!birthDate) return null;
+    const birth = new Date(birthDate);
+    if (Number.isNaN(birth.getTime())) return null;
+    const today = new Date();
+    let age = today.getFullYear() - birth.getFullYear();
+    const m = today.getMonth() - birth.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
+        age--;
+    }
+    return age;
+};
+
+const MatchingResultScreen: React.FC<MatchingResultScreenProps> = ({ onNavigate, routeParams }) => {
     const insets = useSafeAreaInsets();
     const { theme } = useTheme();
     const isDark = theme === 'dark';
 
-    const profile = mockMatchData;
     const [isExpanded, setIsExpanded] = useState(false);
+
+    const matchResult: MatchingResult | undefined = routeParams?.matchResult;
+    const person = matchResult?.personInfo;
+    const saju = matchResult?.sajuResponse;
+
+    const profile = useMemo(() => {
+        if (!person) {
+            return null;
+        }
+
+        const genderInfo = person.gender ? genderLabelMap[person.gender] : undefined;
+        const age = getAgeFromBirth(person.birthDate);
+        const profileImage =
+            person.profileImagePath && person.profileImagePath.startsWith('http')
+                ? person.profileImagePath
+                : person.profileImagePath
+                ? `http://10.0.2.2:8080${person.profileImagePath}`
+                : null;
+
+        return {
+            name: person.name || '이름 미설정',
+            age: age ?? undefined,
+            genderIcon: genderInfo?.icon ?? 'female',
+            genderLabel: genderInfo?.label ?? '미설정',
+            job: formatEnumValue('job', person.job),
+            location: formatEnumValue('region', person.region),
+            mbti: person.mbti || 'MBTI 미설정',
+            drinking: formatEnumValue('drinkingFrequency', person.drinkingFrequency),
+            sexualOrientation: sexualOrientationMap[person.sexualOrientation ?? ''] || '정보 없음',
+            pets: formatEnumValue('petPreference', person.petPreference),
+            height: person.height ? `${person.height}cm` : '정보 없음',
+            contactfrequency: formatEnumValue('contactFrequency', person.contactFrequency),
+            religion: formatEnumValue('religion', person.religion),
+            smoking:
+                person.smokingStatus === 'SMOKER'
+                    ? '흡연'
+                    : person.smokingStatus === 'NON_SMOKER'
+                    ? '비흡연'
+                    : '정보 없음',
+            profileImage,
+            selfIntroduction: person.introduction || '자기소개가 없습니다.',
+        };
+    }, [person]);
+
+    if (!matchResult || !person || !saju || !profile) {
+        return (
+            <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+                <Text style={{ marginBottom: 16 }}>매칭 정보를 불러오지 못했습니다.</Text>
+                <ButtonView title="돌아가기" onPress={() => onNavigate('main')} size="medium" />
+            </View>
+        );
+    }
 
     return (
         <View style={[styles.container, { backgroundColor: isDark ? '#000' : '#FFFFFF' }]}>
@@ -90,10 +145,11 @@ const MatchingResultScreen: React.FC<MatchingResultScreenProps> = ({ onNavigate 
                         <View style={styles.profileInfo}>
                             <View style={styles.nameRow}>
                                 <Text style={[styles.userName, { color: isDark ? '#FFFFFF' : '#1E2939' }]}>
-                                    {profile.name}({profile.age})
+                                    {profile.name}
+                                    {profile.age ? `(${profile.age})` : ''}
                                 </Text>
 
-                                {profile.gender === 'male' ? (
+                                {profile.genderIcon === 'male' ? (
                                     <MaleIcon width={24} height={24} />
                                 ) : (
                                     <FemaleIcon width={24} height={24} />
@@ -110,21 +166,27 @@ const MatchingResultScreen: React.FC<MatchingResultScreenProps> = ({ onNavigate 
                                     <Text style={[styles.scoreLabel, { color: isDark ? '#BBB' : '#4A5565' }]}>
                                         Original Score
                                     </Text>
-                                    <Text style={styles.scoreValueRed}>{profile.originalScore.toFixed(3)}</Text>
+                                    <Text style={styles.scoreValueRed}>
+                                        {(saju.originalScore ?? 0).toFixed(3)}
+                                    </Text>
                                 </View>
 
                                 <View style={styles.scoreRow}>
                                     <Text style={[styles.scoreLabel, { color: isDark ? '#BBB' : '#4A5565' }]}>
                                         Final Score
                                     </Text>
-                                    <Text style={styles.scoreValueRed}>{profile.finalScore.toFixed(3)}</Text>
+                                    <Text style={styles.scoreValueRed}>
+                                        {(saju.finalScore ?? 0).toFixed(3)}
+                                    </Text>
                                 </View>
 
                                 <View style={styles.scoreRow}>
                                     <Text style={[styles.scoreLabel, { color: isDark ? '#BBB' : '#4A5565' }]}>
                                         Stress Score
                                     </Text>
-                                    <Text style={styles.scoreValueGreen}>{profile.stressScore.toFixed(3)}</Text>
+                                    <Text style={styles.scoreValueGreen}>
+                                        {(saju.stressScore ?? 0).toFixed(3)}
+                                    </Text>
                                 </View>
                             </View>
                         </View>
@@ -144,6 +206,21 @@ const MatchingResultScreen: React.FC<MatchingResultScreenProps> = ({ onNavigate 
                     <Text style={[styles.sectionTitle, { color: isDark ? '#FFFFFF' : '#1E2939' }]}>자기소개</Text>
                     <Text style={[styles.introText, { color: isDark ? '#CCCCCC' : '#364153' }]}>
                         {profile.selfIntroduction}
+                    </Text>
+                </View>
+
+                <View style={[styles.sectionCard, { backgroundColor: isDark ? '#111' : '#F9FAFB' }]}>
+                    <Text style={[styles.sectionTitle, { color: isDark ? '#FFFFFF' : '#1E2939' }]}>
+                        사주 분석
+                    </Text>
+                    <Text style={[styles.introText, { color: isDark ? '#CCCCCC' : '#364153', marginBottom: 8 }]}>
+                        {saju.matchAnalysis ?? '분석 정보 없음'}
+                    </Text>
+                    <Text style={[styles.introText, { color: isDark ? '#AAAAAA' : '#6B7280', marginBottom: 4 }]}>
+                        • 나의 살풀이: {saju.person1SalAnalysis ?? '정보 없음'}
+                    </Text>
+                    <Text style={[styles.introText, { color: isDark ? '#AAAAAA' : '#6B7280' }]}>
+                        • 상대 살풀이: {saju.person2SalAnalysis ?? '정보 없음'}
                     </Text>
                 </View>
 

@@ -86,7 +86,7 @@ const App: React.FC = () => {
                 return <SignupProfileScreen onNavigate={handleNavigation} routeParams={params} />;
             case 'home':
             case 'main':
-                return <MainScreen onNavigate={handleNavigation} />;
+                return <MainScreen onNavigate={handleNavigation} routeParams={params} />;
             case 'mypage':
                 return <MyScreen onNavigate={handleNavigation} />;
             case 'chat':
@@ -100,7 +100,7 @@ const App: React.FC = () => {
                     />
                 );
             case 'matchingResult':
-                return <MatchingResultScreen onNavigate={handleNavigation} />;
+                return <MatchingResultScreen onNavigate={handleNavigation} routeParams={params} />;
             case 'settings':
                 return <SettingsScreen onNavigate={handleNavigation} />;
             case 'profileEdit':
