@@ -57,7 +57,7 @@ const App: React.FC = () => {
                 currentScreen: 'chatDetail',
                 chatDetailName: extraData.chatName,
                 chatDetailAge: extraData.chatAge,
-                routeParams: {},
+                routeParams: extraData || {},
             });
         } else {
             setAppState({
@@ -97,6 +97,8 @@ const App: React.FC = () => {
                         onNavigate={handleNavigation}
                         chatName={appState.chatDetailName}
                         chatAge={appState.chatDetailAge}
+                        chatRoomId={appState.routeParams?.chatRoomId}
+                        otherUserId={appState.routeParams?.otherUserId}
                     />
                 );
             case 'matchingResult':

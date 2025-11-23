@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
     StyleSheet,
     Text,
@@ -26,18 +26,23 @@ import MenuIcon from '../assets/menuIcon.svg';
 import ChatTipModal from '../components/ChatTipModal';
 import { BaseScreenProps } from '../types';
 import { useTheme } from '../theme/ThemeContext';
+import { fetchMessages, Message, createOrGetChatRoom, fetchChatRooms } from '../api/chat';
+import { websocketManager } from '../utils/websocket';
 
 interface ChatDetailScreenProps extends BaseScreenProps {
     chatName?: string;
     chatAge?: number;
+    chatRoomId?: number;
+    otherUserId?: number;
 }
 
-const mockMessages = [
-    { id: '1', text: '안녕하세요!', time: '오후 3:15', isMe: false },
-    { id: '2', text: '반가워요😊', time: '오후 3:20', isMe: true },
-];
-
-const ChatDetailScreen: React.FC<ChatDetailScreenProps> = ({ onNavigate, chatName = '지은', chatAge = 26 }) => {
+const ChatDetailScreen: React.FC<ChatDetailScreenProps> = ({ 
+    onNavigate, 
+    chatName = '지은', 
+    chatAge = 26,
+    chatRoomId,
+    otherUserId,
+}) => {
     const insets = useSafeAreaInsets();
     const { theme } = useTheme();
     const isDark = theme === 'dark';
@@ -45,6 +50,13 @@ const ChatDetailScreen: React.FC<ChatDetailScreenProps> = ({ onNavigate, chatNam
     const [message, setMessage] = useState('');
     const [showMenu, setShowMenu] = useState(false);
     const [tipVisible, setTipVisible] = useState(true);
+    const [messages, setMessages] = useState<Message[]>([]);
+    const [userId, setUserId] = useState<number | null>(null);
+    const [currentChatRoomId, setCurrentChatRoomId] = useState<number | undefined>(chatRoomId);
+    const [currentOtherUserId, setCurrentOtherUserId] = useState<number | undefined>(otherUserId);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isSending, setIsSending] = useState(false);
+    const scrollViewRef = useRef<ScrollView>(null);
     const tipType = 'ice';
 
     useEffect(() => {
@@ -55,10 +67,147 @@ const ChatDetailScreen: React.FC<ChatDetailScreenProps> = ({ onNavigate, chatNam
         checkTip();
     }, []);
 
+    // userId 로드 및 WebSocket 연결
+    useEffect(() => {
+        const initializeChat = async () => {
+            try {
+                const storedId = await AsyncStorage.getItem('@auth/userId');
+                const numericId = storedId ? Number(storedId) : null;
+                if (!numericId) {
+                    console.error('[ChatDetailScreen] No userId found');
+                    return;
+                }
+                setUserId(numericId);
+
+                // WebSocket 연결
+                if (!websocketManager.isConnected()) {
+                    await websocketManager.connect(numericId);
+                }
+
+                // 채팅방이 있으면 메시지 로드
+                if (currentChatRoomId) {
+                    await loadMessages(numericId, currentChatRoomId);
+                }
+            } catch (error) {
+                console.error('[ChatDetailScreen] Initialization error:', error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        initializeChat();
+
+        return () => {
+            // STOMP에서는 특별한 구독 해제가 필요 없음
+        };
+    }, [currentChatRoomId]);
+
+    // 메시지 로드
+    const loadMessages = async (currentUserId: number, roomId: number) => {
+        try {
+            const loadedMessages = await fetchMessages(roomId, currentUserId);
+            setMessages(loadedMessages);
+            // 스크롤을 맨 아래로
+            setTimeout(() => {
+                scrollViewRef.current?.scrollToEnd({ animated: false });
+            }, 100);
+        } catch (error) {
+            console.error('[ChatDetailScreen] Failed to load messages:', error);
+        }
+    };
+
+    // 실시간 메시지 수신 핸들러
+    useEffect(() => {
+        if (!currentChatRoomId || !userId) return;
+
+        const cleanup = websocketManager.onMessage(currentChatRoomId, (newMessage: Message) => {
+            setMessages((prev) => {
+                // 중복 메시지 방지
+                const exists = prev.some((msg) => msg.messageId === newMessage.messageId);
+                if (exists) return prev;
+                return [...prev, { ...newMessage, isMe: newMessage.senderId === userId }];
+            });
+            // 스크롤을 맨 아래로
+            setTimeout(() => {
+                scrollViewRef.current?.scrollToEnd({ animated: true });
+            }, 100);
+        });
+
+        return cleanup;
+    }, [currentChatRoomId, userId]);
+
     const closeTip = async () => {
         setTipVisible(false);
         await AsyncStorage.setItem('chat_tip_viewed', 'true');
     };
+
+    // 메시지 전송
+    const handleSendMessage = async () => {
+        if (!message.trim() || !userId || !currentOtherUserId || isSending) return;
+
+        const messageContent = message.trim();
+        setMessage('');
+        setIsSending(true);
+
+        try {
+            let roomId = currentChatRoomId;
+
+            // 채팅방이 없으면 생성
+            if (!roomId) {
+                const room = await createOrGetChatRoom(userId, currentOtherUserId);
+                roomId = room.roomId;
+                setCurrentChatRoomId(roomId);
+                setCurrentOtherUserId(room.otherUserId);
+                
+                // 새로 생성된 채팅방의 메시지 로드
+                await loadMessages(userId, roomId);
+            }
+
+            // STOMP로 메시지 전송 (백엔드에서 저장 및 전송 처리)
+            if (roomId) {
+                websocketManager.sendMessage(roomId, messageContent);
+            }
+
+            // 메시지는 WebSocket을 통해 수신되므로 여기서는 UI 업데이트만
+            // (실제 메시지는 STOMP를 통해 수신됨)
+        } catch (error) {
+            console.error('[ChatDetailScreen] Failed to send message:', error);
+            setMessage(messageContent); // 실패 시 메시지 복원
+        } finally {
+            setIsSending(false);
+        }
+    };
+
+    // 시간 포맷팅
+    const formatTime = (dateString: string): string => {
+        const date = new Date(dateString);
+        const hours = date.getHours();
+        const minutes = date.getMinutes();
+        const period = hours >= 12 ? '오후' : '오전';
+        const displayHours = hours > 12 ? hours - 12 : hours === 0 ? 12 : hours;
+        return `${period} ${displayHours}:${minutes.toString().padStart(2, '0')}`;
+    };
+
+    // otherUserId가 없을 때 chatRoomId로 채팅방 정보 가져오기
+    useEffect(() => {
+        const loadChatRoomInfo = async () => {
+            if (!currentChatRoomId && otherUserId) {
+                setCurrentOtherUserId(otherUserId);
+            } else if (currentChatRoomId && !currentOtherUserId && userId) {
+                // 채팅방 정보에서 otherUserId 가져오기
+                try {
+                    const rooms = await fetchChatRooms(userId);
+                    const room = rooms.find((r) => r.roomId === currentChatRoomId);
+                    if (room) {
+                        setCurrentOtherUserId(room.otherUserId);
+                    }
+                } catch (error) {
+                    console.error('[ChatDetailScreen] Failed to load chat room info:', error);
+                }
+            }
+        };
+        loadChatRoomInfo();
+    }, [currentChatRoomId, otherUserId, userId]);
 
     return (
         <KeyboardAvoidingView
@@ -95,42 +244,56 @@ const ChatDetailScreen: React.FC<ChatDetailScreenProps> = ({ onNavigate, chatNam
                 </TouchableOpacity>
             </View>
 
-            <ScrollView style={styles.messagesContainer} contentContainerStyle={styles.messagesContent}>
-                {mockMessages.map((msg) =>
-                    msg.isMe ? (
-                        <View key={msg.id} style={styles.myMessageContainer}>
-                            <LinearGradient
-                                colors={['#EC4899', '#F43F5E']}
-                                start={{ x: 0, y: 0 }}
-                                end={{ x: 1, y: 0 }}
-                                style={styles.myMessageBubble}
-                            >
-                                <Text style={styles.myMessageText}>{msg.text}</Text>
-                            </LinearGradient>
+            <ScrollView 
+                ref={scrollViewRef}
+                style={styles.messagesContainer} 
+                contentContainerStyle={styles.messagesContent}
+            >
+                {isLoading ? (
+                    <View style={styles.loadingContainer}>
+                        <Text style={{ color: isDark ? '#FFFFFF' : '#1E2939' }}>메시지를 불러오는 중...</Text>
+                    </View>
+                ) : messages.length === 0 ? (
+                    <View style={styles.emptyContainer}>
+                        <Text style={{ color: isDark ? '#A0A0A0' : '#6A7282' }}>아직 메시지가 없습니다.</Text>
+                    </View>
+                ) : (
+                    messages.map((msg) =>
+                        msg.isMe ? (
+                            <View key={msg.messageId} style={styles.myMessageContainer}>
+                                <LinearGradient
+                                    colors={['#EC4899', '#F43F5E']}
+                                    start={{ x: 0, y: 0 }}
+                                    end={{ x: 1, y: 0 }}
+                                    style={styles.myMessageBubble}
+                                >
+                                    <Text style={styles.myMessageText}>{msg.content}</Text>
+                                </LinearGradient>
 
-                            <Text style={[styles.myMessageTime, { color: isDark ? '#A0A0A0' : '#6A7282' }]}>
-                                {msg.time}
-                            </Text>
-                        </View>
-                    ) : (
-                        <View key={msg.id} style={styles.theirMessageContainer}>
-                            <View
-                                style={[
-                                    styles.theirMessageBubble,
-                                    {
-                                        backgroundColor: isDark ? '#1A1A1A' : '#FFFFFF',
-                                        borderColor: isDark ? '#444' : '#0000001A',
-                                    },
-                                ]}
-                            >
-                                <Text style={[styles.theirMessageText, { color: isDark ? '#FFFFFF' : '#1E2939' }]}>
-                                    {msg.text}
+                                <Text style={[styles.myMessageTime, { color: isDark ? '#A0A0A0' : '#6A7282' }]}>
+                                    {formatTime(msg.timestamp)}
                                 </Text>
                             </View>
-                            <Text style={[styles.theirMessageTime, { color: isDark ? '#888' : '#6A7282' }]}>
-                                {msg.time}
-                            </Text>
-                        </View>
+                        ) : (
+                            <View key={msg.messageId} style={styles.theirMessageContainer}>
+                                <View
+                                    style={[
+                                        styles.theirMessageBubble,
+                                        {
+                                            backgroundColor: isDark ? '#1A1A1A' : '#FFFFFF',
+                                            borderColor: isDark ? '#444' : '#0000001A',
+                                        },
+                                    ]}
+                                >
+                                    <Text style={[styles.theirMessageText, { color: isDark ? '#FFFFFF' : '#1E2939' }]}>
+                                        {msg.content}
+                                    </Text>
+                                </View>
+                                <Text style={[styles.theirMessageTime, { color: isDark ? '#888' : '#6A7282' }]}>
+                                    {formatTime(msg.timestamp)}
+                                </Text>
+                            </View>
+                        )
                     )
                 )}
             </ScrollView>
@@ -175,9 +338,15 @@ const ChatDetailScreen: React.FC<ChatDetailScreenProps> = ({ onNavigate, chatNam
                         onChangeText={setMessage}
                         placeholder="메시지를 입력하세요"
                         placeholderTextColor={isDark ? '#777777' : '#0A0A0A80'}
+                        onSubmitEditing={handleSendMessage}
+                        returnKeyType="send"
                     />
 
-                    <TouchableOpacity style={styles.sendButton}>
+                    <TouchableOpacity 
+                        style={styles.sendButton} 
+                        onPress={handleSendMessage}
+                        disabled={!message.trim() || isSending}
+                    >
                         <LinearGradient colors={['#F43F5E', '#EC4899']} style={styles.sendButtonGradient}>
                             <SendIcon width={20} height={20} />
                         </LinearGradient>
@@ -378,6 +547,18 @@ const styles = StyleSheet.create({
     menuItemText: {
         fontSize: 16,
         fontWeight: '400',
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingVertical: 40,
+    },
+    emptyContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingVertical: 40,
     },
 });
 
