@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MainScreenProps } from '../types';
 import BottomNavigation from '../components/BottomNavigation';
 import ButtonView from '../components/ButtonView';
@@ -121,8 +122,18 @@ const MainScreen: React.FC<MainScreenProps> = ({ onNavigate }) => {
         }
     };
 
-    const handleCloseFortune = () => {
-        setShowFortune(false);
+    const loadFortuneData = async () => {
+        try {
+            setIsLoadingFortune(true);
+            const data = await fetchTodayFortune(birthDate);
+            console.log('[MainScreen] Fortune data loaded', data);
+            setFortuneData(data);
+        } catch (err) {
+            console.error('[MainScreen] Fortune load failed', err);
+            // 에러 발생 시 기존 랜덤 텍스트 사용
+        } finally {
+            setIsLoadingFortune(false);
+        }
     };
 
     const handleCategoryChange = async (category: keyof typeof fortuneTexts) => {
@@ -131,6 +142,7 @@ const MainScreen: React.FC<MainScreenProps> = ({ onNavigate }) => {
             await loadFortuneData();
         }
     };
+
 
     const handleMatchingClick = () => {
         setShowMatchingWarning(true);
