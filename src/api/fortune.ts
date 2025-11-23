@@ -1,4 +1,5 @@
 import { request } from './client';
+
 import { MyPageData } from '../types';
 
 export interface FortuneDTO {
