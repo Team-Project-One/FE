@@ -33,6 +33,14 @@ const SignupBasicScreen: React.FC<SignupBasicScreenProps> = ({ onNavigate, route
     const errorHideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const handleInputChange = (field: keyof SignupBasicFormData, value: string) => {
+        // 이름 필드에 대한 제한 적용 (입력 중에는 최대 길이만 제한)
+        if (field === 'name') {
+            // 최대 4글자 제한만 적용 (입력 중에는 한글 필터링하지 않음)
+            if (value.length > 4) {
+                value = value.slice(0, 4);
+            }
+        }
+        
         setFormData((prev) => ({ ...prev, [field]: value }));
         if (errors[field]) {
             setErrors((prev) => ({ ...prev, [field]: false }));
@@ -41,7 +49,14 @@ const SignupBasicScreen: React.FC<SignupBasicScreenProps> = ({ onNavigate, route
 
     const validateForm = () => {
         const next: any = {};
-        if (!formData.name.trim()) next.name = true;
+        const nameTrimmed = formData.name.trim();
+        if (!nameTrimmed) {
+            next.name = true;
+        } else if (nameTrimmed.length > 4) {
+            next.name = true;
+        } else if (!/^[가-힣]+$/.test(nameTrimmed)) {
+            next.name = true;
+        }
         if (formData.birthDate.replace(/[^0-9]/g, '').length !== 8) next.birthDate = true;
         if (!formData.gender) next.gender = true;
         setErrors(next);
@@ -52,13 +67,25 @@ const SignupBasicScreen: React.FC<SignupBasicScreenProps> = ({ onNavigate, route
         const missing: string[] = [];
         const invalid: string[] = [];
 
-        if (!formData.name.trim()) missing.push('이름');
+        const nameTrimmed = formData.name.trim();
+        if (!nameTrimmed) {
+            missing.push('이름');
+        } else if (nameTrimmed.length > 4) {
+            invalid.push('이름은 4글자 이하여야 합니다.');
+        } else if (!/^[가-힣]+$/.test(nameTrimmed)) {
+            invalid.push('이름은 한글만 입력 가능합니다.');
+        }
+        
         const b = formData.birthDate.replace(/[^0-9]/g, '');
         if (!formData.birthDate) missing.push('생년월일');
         else if (b.length !== 8) invalid.push('생년월일');
         if (!formData.gender) missing.push('성별');
 
-        if (invalid.length) return '생년월일을 다시 입력해주세요.';
+        if (invalid.length) {
+            if (invalid.includes('이름은 4글자 이하여야 합니다.')) return '이름은 4글자 이하여야 합니다.';
+            if (invalid.includes('이름은 한글만 입력 가능합니다.')) return '이름은 한글만 입력 가능합니다.';
+            return '생년월일을 다시 입력해주세요.';
+        }
         if (missing.length === 1) return `${missing[0]}을 입력해주세요.`;
         if (missing.length === 2) return `${missing[0]}과 ${missing[1]}을 입력해주세요.`;
         return `${missing.join(', ')}을 입력해주세요.`;
@@ -85,8 +112,14 @@ const SignupBasicScreen: React.FC<SignupBasicScreenProps> = ({ onNavigate, route
 
     const handleNext = () => {
         if (validateForm()) {
+            // 이름에서 한글이 아닌 문자 제거 및 최대 4글자 제한
+            let cleanedName = formData.name.trim().replace(/[^가-힣]/g, '');
+            if (cleanedName.length > 4) {
+                cleanedName = cleanedName.slice(0, 4);
+            }
+            
             updateSignupData({
-                name: formData.name.trim(),
+                name: cleanedName,
                 birthDate: formData.birthDate,
                 gender: formData.gender,
             });

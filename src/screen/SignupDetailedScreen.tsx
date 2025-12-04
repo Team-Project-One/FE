@@ -14,6 +14,7 @@ import HeightInput from '../components/signupDetailed/HeightInput';
 import PetsSelector from '../components/signupDetailed/PetsSelector';
 import ReligionSelector from '../components/signupDetailed/ReligionSelector';
 import ContactFrequencySelector from '../components/signupDetailed/ContactFrequencySelector';
+import SexualOrientationSelector from '../components/signupDetailed/SexualOrientationSelector';
 import MbtiSelector from '../components/signupDetailed/MbtiSelector';
 import { SignupDetailedScreenProps, SignupDetailedFormData } from '../types';
 import styles from '../styles/signup/singupDetailedStyles';
@@ -35,6 +36,7 @@ const SignupDetailedScreen: React.FC<SignupDetailedScreenProps> = ({ onNavigate,
         pets: signupData.pets || '',
         religion: signupData.religion || '',
         contactFrequency: signupData.contactFrequency || '',
+        sexualOrientation: signupData.sexualOrientation === 'STRAIGHT' ? '이성애자' : signupData.sexualOrientation === 'HOMOSEXUAL' ? '동성애자' : '',
         mbti: signupData.mbti || '',
     });
 
@@ -50,7 +52,7 @@ const SignupDetailedScreen: React.FC<SignupDetailedScreenProps> = ({ onNavigate,
         if (!formData.pets) return '반려동물 여부를 선택해주세요.';
         if (!formData.religion) return '종교를 선택해주세요.';
         if (!formData.contactFrequency) return '연락 빈도를 선택해주세요.';
-        if (!formData.mbti) return 'MBTI를 선택해주세요.';
+        if (!formData.sexualOrientation) return '성지향성을 선택해주세요.';
         return '';
     };
 
@@ -65,7 +67,12 @@ const SignupDetailedScreen: React.FC<SignupDetailedScreenProps> = ({ onNavigate,
             setShowErrorBanner(true);
             return;
         }
-        updateSignupData(formData);
+        // sexualOrientation을 한글에서 enum으로 변환
+        const formDataWithEnum = {
+            ...formData,
+            sexualOrientation: formData.sexualOrientation === '이성애자' ? 'STRAIGHT' : formData.sexualOrientation === '동성애자' ? 'HOMOSEXUAL' : formData.sexualOrientation,
+        };
+        updateSignupData(formDataWithEnum);
         onNavigate('signupSelfIntro', { progress: currentProgress });
     };
 
@@ -150,10 +157,17 @@ const SignupDetailedScreen: React.FC<SignupDetailedScreenProps> = ({ onNavigate,
                             error={hasSubmitted && !formData.contactFrequency}
                         />
 
+                        <SexualOrientationSelector
+                            value={formData.sexualOrientation}
+                            onChange={(v) => handleChange('sexualOrientation', v)}
+                            error={hasSubmitted && !formData.sexualOrientation}
+                        />
+
                         <MbtiSelector
                             value={formData.mbti}
                             onChange={(v) => handleChange('mbti', v)}
-                            error={hasSubmitted && !formData.mbti}
+                            // MBTI는 선택 optional (null 허용)
+                            error={false}
                         />
                     </View>
                 </ScrollView>

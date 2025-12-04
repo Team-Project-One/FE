@@ -92,17 +92,18 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({ onNavigate, current
 const styles = StyleSheet.create({
     bottomNav: {
         borderTopWidth: 1.35,
-        paddingHorizontal: 48,
+        paddingHorizontal: 24,
         paddingTop: 16,
     },
 
     buttonWrapper: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        gap: 63,
+        width: '100%',
     },
 
     navButton: {
+        flex: 1,
         paddingVertical: 8,
         flexDirection: 'column',
         alignItems: 'center',

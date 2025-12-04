@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView } from 'react-native';
 import BackIcon from '../../assets/back.svg';
 import ToggleOff from '../assets/toggle.svg';
@@ -6,12 +6,70 @@ import ToggleOn from '../assets/toggle-active.svg';
 import RightArrow from '../assets/rightArrow.svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SettingsScreenProps } from '../types';
 import { useTheme } from '../theme/ThemeContext';
+import { getNotificationSetting, setNotificationSetting } from '../utils/notifications';
+import { deleteUser } from '../api/mypage';
+import ConfirmModal from '../components/ConfirmModal';
+import { websocketManager } from '../utils/websocket';
 
 const SettingsScreen: React.FC<SettingsScreenProps> = ({ onNavigate }) => {
     const insets = useSafeAreaInsets();
     const [pushNotifications, setPushNotifications] = useState(true);
+    const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
+    const [showDeleteSuccessModal, setShowDeleteSuccessModal] = useState(false);
+    const [showDeleteErrorModal, setShowDeleteErrorModal] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+
+    // 알림 설정 불러오기
+    useEffect(() => {
+        const loadNotificationSetting = async () => {
+            const enabled = await getNotificationSetting();
+            setPushNotifications(enabled);
+        };
+        loadNotificationSetting();
+    }, []);
+
+    // 알림 설정 토글
+    const handleToggleNotifications = async () => {
+        const newValue = !pushNotifications;
+        setPushNotifications(newValue);
+        await setNotificationSetting(newValue);
+    };
+
+    // 계정 탈퇴 처리
+    const handleDeleteAccount = async () => {
+        try {
+            setIsDeleting(true);
+            const userIdStr = await AsyncStorage.getItem('@auth/userId');
+            if (!userIdStr) {
+                throw new Error('사용자 ID를 찾을 수 없습니다.');
+            }
+            const userId = Number(userIdStr);
+            
+            await deleteUser(userId);
+            
+            // WebSocket 연결 해제
+            websocketManager.disconnect();
+            
+            // 로컬 스토리지 정리
+            await AsyncStorage.multiRemove([
+                '@auth/accessToken',
+                '@auth/refreshToken',
+                '@auth/userId',
+            ]);
+            
+            setShowDeleteConfirmModal(false);
+            setShowDeleteSuccessModal(true);
+        } catch (error) {
+            console.error('[SettingsScreen] Failed to delete account:', error);
+            setShowDeleteConfirmModal(false);
+            setShowDeleteErrorModal(true);
+        } finally {
+            setIsDeleting(false);
+        }
+    };
 
     const { theme, toggleTheme } = useTheme();
     const isDark = theme === 'dark';
@@ -50,7 +108,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onNavigate }) => {
                             </Text>
                         </View>
 
-                        <TouchableOpacity onPress={() => setPushNotifications(!pushNotifications)}>
+                        <TouchableOpacity onPress={handleToggleNotifications}>
                             {pushNotifications ? (
                                 <ToggleOn width={50} height={30} />
                             ) : (
@@ -107,12 +165,49 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onNavigate }) => {
 
                     <TouchableOpacity
                         style={[styles.settingItem, { borderBottomColor: isDark ? '#FFFFFF33' : '#0000001A' }]}
+                        onPress={() => setShowDeleteConfirmModal(true)}
+                        disabled={isDeleting}
                     >
                         <Text style={[styles.settingLabel, styles.dangerText]}>계정 탈퇴</Text>
                         <RightArrow width={20} height={20} color={isDark ? '#FFFFFF' : '#000000'} />
                     </TouchableOpacity>
                 </View>
             </ScrollView>
+
+            <ConfirmModal
+                visible={showDeleteConfirmModal}
+                title="계정 탈퇴"
+                message="정말 계정을 탈퇴하시겠어요? 탈퇴 시 모든 데이터가 삭제되며 복구할 수 없습니다."
+                confirmText="탈퇴하기"
+                cancelText="취소"
+                onConfirm={handleDeleteAccount}
+                onCancel={() => setShowDeleteConfirmModal(false)}
+                confirmButtonColor="#E7000B"
+            />
+            <ConfirmModal
+                visible={showDeleteSuccessModal}
+                title="계정 탈퇴 완료"
+                message="계정이 성공적으로 탈퇴되었습니다."
+                confirmText="확인"
+                cancelText=""
+                onConfirm={() => {
+                    setShowDeleteSuccessModal(false);
+                    onNavigate('login');
+                }}
+                onCancel={() => {
+                    setShowDeleteSuccessModal(false);
+                    onNavigate('login');
+                }}
+            />
+            <ConfirmModal
+                visible={showDeleteErrorModal}
+                title="오류"
+                message="계정 탈퇴 중 문제가 발생했습니다."
+                confirmText="확인"
+                cancelText=""
+                onConfirm={() => setShowDeleteErrorModal(false)}
+                onCancel={() => setShowDeleteErrorModal(false)}
+            />
         </View>
     );
 };

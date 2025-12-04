@@ -46,21 +46,31 @@ const SignupProfileScreen: React.FC<SignupProfileScreenProps> = ({ onNavigate })
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
     const pickImage = async () => {
-        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-        if (status !== 'granted') {
-            alert('사진 접근 권한이 필요합니다.');
-            return;
-        }
+        try {
+            console.log('[SignupProfileScreen] pickImage called');
+            const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+            console.log('[SignupProfileScreen] Permission status:', status);
+            if (status !== 'granted') {
+                alert('사진 접근 권한이 필요합니다.');
+                return;
+            }
 
-        const result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images,
-            allowsEditing: true,
-            aspect: [1, 1],
-            quality: 1,
-        });
+            console.log('[SignupProfileScreen] Launching image library...');
+            const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: 'images',
+                allowsEditing: true,
+                aspect: [1, 1],
+                quality: 1,
+            });
 
-        if (!result.canceled && result.assets[0]) {
-            updateSignupData({ profileImageUri: result.assets[0].uri });
+            console.log('[SignupProfileScreen] Image picker result:', result);
+            if (!result.canceled && result.assets && result.assets[0]) {
+                updateSignupData({ profileImageUri: result.assets[0].uri });
+                console.log('[SignupProfileScreen] Profile image URI updated:', result.assets[0].uri);
+            }
+        } catch (error) {
+            console.error('[SignupProfileScreen] Error picking image:', error);
+            alert('사진을 선택하는 중 오류가 발생했습니다.');
         }
     };
 

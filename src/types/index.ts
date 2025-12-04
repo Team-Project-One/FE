@@ -73,6 +73,7 @@ export interface SignupDetailedFormData {
     pets: string;
     religion: string;
     contactFrequency: string;
+    sexualOrientation: string;
     mbti: string;
 }
 

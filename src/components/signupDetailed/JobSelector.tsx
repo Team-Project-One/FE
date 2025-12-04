@@ -23,6 +23,11 @@ const JobSelector: React.FC<JobSelectorProps> = ({
 }) => {
     const hasError = error && !value;
 
+    const handleSelect = (next: string) => {
+        if (value === next) return;
+        onChange(next);
+    };
+
     return (
         <View style={styles.inputGroup}>
             <Text style={[styles.label, { color: textColor }]}>직업</Text>
@@ -32,7 +37,7 @@ const JobSelector: React.FC<JobSelectorProps> = ({
                     <SelectableButton
                         label="무직"
                         selected={value === '무직'}
-                        onPress={() => onChange(value === '무직' ? '' : '무직')}
+                        onPress={() => handleSelect('무직')}
                         error={hasError}
                         bgColor={bgColor}
                         borderColor={borderColor}
@@ -42,7 +47,7 @@ const JobSelector: React.FC<JobSelectorProps> = ({
                     <SelectableButton
                         label="학생"
                         selected={value === '학생'}
-                        onPress={() => onChange(value === '학생' ? '' : '학생')}
+                        onPress={() => handleSelect('학생')}
                         error={hasError}
                         bgColor={bgColor}
                         borderColor={borderColor}
@@ -54,7 +59,7 @@ const JobSelector: React.FC<JobSelectorProps> = ({
                     <SelectableButton
                         label="직장인"
                         selected={value === '직장인'}
-                        onPress={() => onChange(value === '직장인' ? '' : '직장인')}
+                        onPress={() => handleSelect('직장인')}
                         error={hasError}
                         bgColor={bgColor}
                         borderColor={borderColor}
