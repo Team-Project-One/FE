@@ -6,6 +6,9 @@ export interface ChatRoom {
     otherUserId: number;
     otherUserName: string;
     otherUserProfileImage: string | null;
+    otherUserGender?: string | null; // 성별 정보 (MALE, FEMALE 등)
+    otherUserAge?: number | null; // 상대방 나이
+    otherUserBirthDate?: string | null; // 상대방 생년월일
     lastMessage: string | null;
     lastMessageTimestamp: string | null;
     unreadCount?: number; // 백엔드에서 제공하지 않으면 클라이언트에서 계산
@@ -48,9 +51,17 @@ export const fetchChatRooms = async (userId: number): Promise<ChatRoom[]> => {
             otherUserId: room.otherUserId ?? room.other_user_id,
             otherUserName: room.otherUserName ?? room.other_user_name,
             otherUserProfileImage: room.otherUserProfileImage ?? room.other_user_profile_image,
+            otherUserGender: room.otherUserGender ?? room.other_user_gender ?? null,
+            otherUserAge: room.otherUserAge ?? room.other_user_age ?? null,
+            otherUserBirthDate: room.otherUserBirthDate ?? room.other_user_birth_date ?? null,
             lastMessage: room.lastMessage ?? room.last_message,
             lastMessageTimestamp: room.lastMessageTimestamp ?? room.last_message_timestamp,
-            unreadCount: room.unreadCount ?? room.unread_count ?? 0,
+            unreadCount:
+                room.unreadCount ??
+                room.unread_count ??
+                room.unreadMessageCount ??
+                room.unread_message_count ??
+                0,
         }));
     }
     return [];
@@ -80,9 +91,17 @@ export const createOrGetChatRoom = async (userId: number, matchedUserId: number)
         otherUserId: response.otherUserId ?? response.other_user_id,
         otherUserName: response.otherUserName ?? response.other_user_name,
         otherUserProfileImage: response.otherUserProfileImage ?? response.other_user_profile_image,
+        otherUserGender: response.otherUserGender ?? response.other_user_gender ?? null,
+        otherUserAge: response.otherUserAge ?? response.other_user_age ?? null,
+        otherUserBirthDate: response.otherUserBirthDate ?? response.other_user_birth_date ?? null,
         lastMessage: response.lastMessage ?? response.last_message,
         lastMessageTimestamp: response.lastMessageTimestamp ?? response.last_message_timestamp,
-        unreadCount: response.unreadCount ?? response.unread_count ?? 0,
+        unreadCount:
+            response.unreadCount ??
+            response.unread_count ??
+            response.unreadMessageCount ??
+            response.unread_message_count ??
+            0,
     };
 };
 

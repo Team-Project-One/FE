@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
     StyleSheet,
     Text,
@@ -9,6 +9,7 @@ import {
     ActivityIndicator,
     Alert,
 } from 'react-native';
+import { Animated } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { MainScreenProps } from '../types';
@@ -22,6 +23,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { fetchTodayFortune, FortuneDTO } from '../api/fortune';
 import { fetchMyPage } from '../api/mypage';
 import { fetchMatchingResult } from '../api/matching';
+import { websocketManager } from '../utils/websocket';
+import ConfirmModal from '../components/ConfirmModal';
+import { ApiError } from '../api/client';
 
 const fortuneTexts = {
     총운: [
@@ -53,6 +57,12 @@ const categoryEmoji = {
     직장운: '💼',
 } as const;
 
+const backgroundImages = [
+    require('../../assets/mainScreen1.jpg'),
+    require('../../assets/mainScreen2.jpg'),
+    require('../../assets/mainScreen3.jpg'),
+] as const;
+
 const MainScreen: React.FC<MainScreenProps> = ({ onNavigate }) => {
     const insets = useSafeAreaInsets();
     const [showFortune, setShowFortune] = useState(false);
@@ -64,6 +74,29 @@ const MainScreen: React.FC<MainScreenProps> = ({ onNavigate }) => {
     const [birthDate, setBirthDate] = useState<string | null>(null);
     const [isMatching, setIsMatching] = useState(false);
     const [matchingError, setMatchingError] = useState<string | null>(null);
+    const [showNoMatchModal, setShowNoMatchModal] = useState(false);
+    const [currentBackgroundIndex, setCurrentBackgroundIndex] = useState(0);
+    const [nextBackgroundIndex, setNextBackgroundIndex] = useState(1);
+    const fadeAnim = useRef(new Animated.Value(0)).current;
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            const nextIdx = (currentBackgroundIndex + 1) % backgroundImages.length;
+            setNextBackgroundIndex(nextIdx);
+            fadeAnim.stopAnimation();
+            fadeAnim.setValue(0);
+            Animated.timing(fadeAnim, {
+                toValue: 1,
+                duration: 1500,
+                useNativeDriver: true,
+            }).start(() => {
+                setCurrentBackgroundIndex(nextIdx);
+                fadeAnim.setValue(1); // 완전히 새 이미지가 보인 상태 유지
+            });
+        }, 5000);
+
+        return () => clearInterval(interval);
+    }, [currentBackgroundIndex, fadeAnim]);
 
     useEffect(() => {
         const loadBirthDate = async () => {
@@ -73,6 +106,16 @@ const MainScreen: React.FC<MainScreenProps> = ({ onNavigate }) => {
                 if (numericId) {
                     const userData = await fetchMyPage(numericId);
                     setBirthDate(userData.birthDate);
+
+                    // WebSocket 연결 (로그인 후 홈 화면에서도 알림 수신 가능하도록)
+                    if (!websocketManager.isConnected()) {
+                        try {
+                            await websocketManager.connect(numericId);
+                            console.log('[MainScreen] WebSocket connected');
+                        } catch (error) {
+                            console.error('[MainScreen] WebSocket connection failed:', error);
+                        }
+                    }
                 }
             } catch (err) {
                 console.error('생년월일 로드 실패', err);
@@ -80,6 +123,38 @@ const MainScreen: React.FC<MainScreenProps> = ({ onNavigate }) => {
         };
         loadBirthDate();
     }, []);
+
+    // 앱 빌드 시 한 번만 운세 데이터 로드
+    useEffect(() => {
+        const loadFortuneOnBuild = async () => {
+            try {
+                // 저장된 운세 데이터 확인
+                const storedFortune = await AsyncStorage.getItem('@fortune/todayFortune');
+                if (storedFortune) {
+                    // 저장된 값이 있으면 사용
+                    const parsedFortune = JSON.parse(storedFortune) as FortuneDTO;
+                    setFortuneData(parsedFortune);
+                    console.log('[MainScreen] Loaded stored fortune data');
+                } else {
+                    // 저장된 값이 없으면 API 호출 (앱 빌드 시 한 번만)
+                    console.log('[MainScreen] No stored fortune data, fetching from API...');
+                    setIsLoadingFortune(true);
+                    const data = await fetchTodayFortune(birthDate);
+                    setFortuneData(data);
+                    // AsyncStorage에 저장
+                    await AsyncStorage.setItem('@fortune/todayFortune', JSON.stringify(data));
+                    console.log('[MainScreen] Fortune data saved to storage');
+                }
+            } catch (err) {
+                console.error('[MainScreen] Fortune load failed', err);
+            } finally {
+                setIsLoadingFortune(false);
+            }
+        };
+
+        // birthDate 로드 완료 후 운세 데이터 로드 (birthDate가 null이어도 운세는 로드 가능)
+        loadFortuneOnBuild();
+    }, [birthDate]);
 
     const getFortuneByCategory = (category: keyof typeof fortuneTexts) => {
         if (!fortuneData) {
@@ -101,35 +176,20 @@ const MainScreen: React.FC<MainScreenProps> = ({ onNavigate }) => {
         }
     };
 
-    const loadFortuneData = async () => {
-        try {
-            setIsLoadingFortune(true);
-            const data = await fetchTodayFortune(birthDate);
-            setFortuneData(data);
-        } catch (err) {
-            console.error('[MainScreen] Fortune load failed', err);
-        } finally {
-            setIsLoadingFortune(false);
-        }
-    };
-
     const handleFortuneClick = async () => {
         setShowFortune(true);
         setSelectedCategory('총운');
-        if (!fortuneData) {
-            await loadFortuneData();
-        }
+        // 저장된 운세 데이터가 없으면 fallback 텍스트 사용
+        // (이미 useEffect에서 로드했으므로 여기서는 추가 로드 불필요)
     };
 
     const handleCloseFortune = () => {
         setShowFortune(false);
     };
 
-    const handleCategoryChange = async (category: keyof typeof fortuneTexts) => {
+    const handleCategoryChange = (category: keyof typeof fortuneTexts) => {
         setSelectedCategory(category);
-        if (!fortuneData) {
-            await loadFortuneData();
-        }
+        // 저장된 운세 데이터가 없으면 fallback 텍스트 사용
     };
 
     const handleMatchingClick = () => {
@@ -154,12 +214,36 @@ const MainScreen: React.FC<MainScreenProps> = ({ onNavigate }) => {
             setMatchingError(null);
             onNavigate('matchingResult', { matchResult: result });
         } catch (err) {
-            console.error('[MainScreen] Matching failed', err);
-            const message =
-                err && typeof err === 'object' && 'message' in err && typeof err.message === 'string'
-                    ? err.message
-                    : '매칭 중 문제가 발생했습니다.';
-            setMatchingError(message);
+            // 콘솔 에러는 출력하지 않음 (시연용)
+            // console.error('[MainScreen] Matching failed', err);
+            
+            // "매칭 가능한 사용자가 없습니다" 메시지인 경우 모달 표시
+            let errorMessage = '';
+            if (err instanceof ApiError) {
+                errorMessage = err.message || '';
+                // data에서도 메시지 확인 (Spring 기본 에러 응답 형식)
+                if (err.data && typeof err.data === 'object') {
+                    const data = err.data as any;
+                    if (data.message) {
+                        errorMessage = String(data.message);
+                    } else if (data.error) {
+                        errorMessage = String(data.error);
+                    }
+                }
+            } else if (err && typeof err === 'object' && 'message' in err) {
+                errorMessage = String((err as any).message);
+            }
+            
+            // 에러 메시지에 "매칭 가능한 사용자가 없습니다"가 포함되어 있는지 확인
+            if (errorMessage.includes('매칭 가능한 사용자가 없습니다')) {
+                setShowMatchingWarning(false);
+                setShowNoMatchModal(true);
+                return;
+            }
+            
+            // 일반 에러인 경우에도 모달로 표시 (에러 텍스트 대신)
+            setShowMatchingWarning(false);
+            setShowNoMatchModal(true);
         } finally {
             setIsMatching(false);
         }
@@ -176,33 +260,43 @@ const MainScreen: React.FC<MainScreenProps> = ({ onNavigate }) => {
         <View style={styles.container}>
             <StatusBar style="light" />
 
-            <ImageBackground
-                source={require('../../assets/mainScreen.jpg')}
-                style={styles.backgroundImage}
-                resizeMode="cover"
-            >
-                <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
-                    <View style={{ width: 96, height: 40 }}>
-                        <DivineIcon width={96} height={63} />
-                    </View>
-                    <TouchableOpacity onPress={handleFortuneClick} style={styles.cookieButton}>
-                        <View style={{ width: 40, height: 40 }}>
-                            <FortuneCookieIcon width={40} height={40} />
+            <View style={styles.backgroundWrapper}>
+                <ImageBackground
+                    source={backgroundImages[currentBackgroundIndex]}
+                    style={styles.backgroundImage}
+                    resizeMode="cover"
+                />
+                <Animated.Image
+                    source={backgroundImages[nextBackgroundIndex]}
+                    style={[styles.backgroundImage, styles.animatedBackground, { opacity: fadeAnim }]}
+                    resizeMode="cover"
+                />
+                <View style={styles.backgroundDim} />
+
+                <View style={styles.contentOverlay}>
+                    <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
+                        <View style={{ width: 96, height: 40 }}>
+                            <DivineIcon width={96} height={63} />
                         </View>
-                    </TouchableOpacity>
-                </View>
-
-                <View style={styles.overlay}>
-                    <View style={styles.textContainer}>
-                        <Text style={styles.greetingText}>운명의 상대를 만나보세요</Text>
-                        <Text style={styles.descriptionText}>사주팔자로 찾는 완벽한 궁합</Text>
+                        <TouchableOpacity onPress={handleFortuneClick} style={styles.cookieButton}>
+                            <View style={{ width: 40, height: 40 }}>
+                                <FortuneCookieIcon width={40} height={40} />
+                            </View>
+                        </TouchableOpacity>
                     </View>
 
-                    <View style={styles.buttonContainer}>
-                        <ButtonView title="매칭하기" onPress={handleMatchingClick} titleStyle={{ paddingBottom: 2 }} />
+                    <View style={styles.overlay}>
+                        <View style={styles.textContainer}>
+                            <Text style={styles.greetingText}>운명의 상대를 만나보세요</Text>
+                            <Text style={styles.descriptionText}>사주팔자로 찾는 완벽한 궁합</Text>
+                        </View>
+
+                        <View style={styles.buttonContainer}>
+                            <ButtonView title="매칭하기" onPress={handleMatchingClick} titleStyle={{ paddingBottom: 2 }} />
+                        </View>
                     </View>
                 </View>
-            </ImageBackground>
+            </View>
 
             <BottomNavigation onNavigate={onNavigate} currentScreen={'main'} />
 
@@ -274,11 +368,11 @@ const MainScreen: React.FC<MainScreenProps> = ({ onNavigate }) => {
                                     }),
                                 }}
                             >
-                                <SirenIcon width={28} height={28} style={[{ marginLeft: 91 }]} />
+                                <SirenIcon width={28} height={28} />
                             </View>
                             <Text style={styles.warningModalTitle}>매칭 주의사항</Text>
                             <TouchableOpacity onPress={handleWarningClose} style={styles.closeIcon}>
-                                <Text style={[styles.closeIconText, { paddingBottom: 28 }, { paddingLeft: 2 }]}>✕</Text>
+                                <Text style={styles.closeIconText}>✕</Text>
                             </TouchableOpacity>
                         </View>
 
@@ -308,7 +402,6 @@ const MainScreen: React.FC<MainScreenProps> = ({ onNavigate }) => {
                                 titleStyle={{ paddingBottom: 1 }}
                                 size="medium"
                             />
-                            {isMatching && <ActivityIndicator size="small" color="#EC4899" style={{ marginTop: 12 }} />}
                             {matchingError && (
                                 <Text style={styles.matchingErrorText}>{matchingError}</Text>
                             )}
@@ -316,13 +409,52 @@ const MainScreen: React.FC<MainScreenProps> = ({ onNavigate }) => {
                     </View>
                 </View>
             )}
+
+            <ConfirmModal
+                visible={showNoMatchModal}
+                title="매칭 불가"
+                message="매칭 가능한 사용자가 없습니다."
+                confirmText="확인"
+                cancelText=""
+                onConfirm={() => {
+                    setShowNoMatchModal(false);
+                    setWarningChecked(false);
+                }}
+                onCancel={() => {
+                    setShowNoMatchModal(false);
+                    setWarningChecked(false);
+                }}
+            />
         </View>
     );
 };
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#FFFFFF' },
+    backgroundWrapper: { flex: 1, position: 'relative' },
     backgroundImage: { flex: 1, width: '100%', height: '100%' },
+    animatedBackground: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+    },
+    contentOverlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+    },
+    backgroundDim: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    },
 
     header: {
         flexDirection: 'row',
@@ -345,8 +477,24 @@ const styles = StyleSheet.create({
 
     textContainer: { alignItems: 'center', justifyContent: 'center', marginTop: 48 },
 
-    greetingText: { fontSize: 25, fontWeight: '700', color: '#1E2939', marginBottom: 12, textAlign: 'center' },
-    descriptionText: { fontSize: 18, color: '#4A5565', textAlign: 'center' },
+    greetingText: {
+        fontSize: 26,
+        fontWeight: '700',
+        color: '#FFFFFF',
+        marginBottom: 12,
+        textAlign: 'center',
+        textShadowColor: 'rgba(0, 0, 0, 0.35)',
+        textShadowOffset: { width: 0, height: 2 },
+        textShadowRadius: 6,
+    },
+    descriptionText: {
+        fontSize: 18,
+        color: '#F8FAFC',
+        textAlign: 'center',
+        textShadowColor: 'rgba(0, 0, 0, 0.3)',
+        textShadowOffset: { width: 0, height: 1 },
+        textShadowRadius: 4,
+    },
 
     buttonContainer: { width: '100%', alignSelf: 'center', marginBottom: 48 },
 
@@ -482,10 +630,19 @@ const styles = StyleSheet.create({
         lineHeight: 28,
         flex: 1,
         textAlign: 'center',
+        marginLeft: -16,
     },
 
-    closeIcon: { width: 16, height: 16, justifyContent: 'center', alignItems: 'center' },
-    closeIconText: { fontSize: 16, color: '#0A0A0A', fontWeight: '300' },
+    closeIcon: {
+        position: 'absolute',
+        top: -2,
+        right: 10,
+        width: 32,
+        height: 32,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    closeIconText: { fontSize: 20, color: '#4B5563', fontWeight: '400' },
 
     warningListBox: {
         backgroundColor: '#FEFCE8',

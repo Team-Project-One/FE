@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
-import FemaleIcon from '../../assets/female.svg';
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
+import FemaleAvatarIcon from '../../assets/female.svg';
+import MaleAvatarIcon from '../../assets/male.svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -10,6 +11,9 @@ import BottomNavigation from '../components/BottomNavigation';
 import { useTheme } from '../theme/ThemeContext';
 import { fetchChatRooms, ChatRoom } from '../api/chat';
 import { websocketManager } from '../utils/websocket';
+import { API_BASE_URL } from '../api/config';
+import { getUnreadCountMap, getLastReadMap } from '../utils/chatStorage';
+import { ApiError } from '../api/client';
 
 interface ChatScreenProps extends BaseScreenProps {}
 
@@ -26,10 +30,41 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ onNavigate }) => {
     const loadChatRooms = async (currentUserId: number) => {
         try {
             setIsLoading(true);
-            const rooms = await fetchChatRooms(currentUserId);
-            setChatRooms(rooms);
+            const [rooms, unreadMap, lastReadMap] = await Promise.all([
+                fetchChatRooms(currentUserId),
+                getUnreadCountMap(),
+                getLastReadMap(),
+            ]);
+
+            const enhancedRooms = rooms.map((room) => {
+                const key = String(room.roomId);
+                const storedUnread = unreadMap[key] ?? 0;
+                if (storedUnread > 0) {
+                    return { ...room, unreadCount: storedUnread };
+                }
+
+                const lastReadTimestamp = lastReadMap[key];
+                let fallbackUnread = 0;
+                if (room.lastMessageTimestamp) {
+                    const lastMessageTime = Date.parse(room.lastMessageTimestamp);
+                    const lastReadTime = lastReadTimestamp ? Date.parse(lastReadTimestamp) : 0;
+                    if (!lastReadTimestamp || lastMessageTime > lastReadTime) {
+                        fallbackUnread = 1;
+                    }
+                }
+
+                const apiUnread = room.unreadCount ?? 0;
+                return { ...room, unreadCount: Math.max(apiUnread, fallbackUnread) };
+            });
+
+            setChatRooms(enhancedRooms);
         } catch (error) {
             console.error('[ChatScreen] Failed to load chat rooms:', error);
+            // 401 에러인 경우 로그인 화면으로 리다이렉트
+            if (error instanceof ApiError && error.status === 401) {
+                console.log('[ChatScreen] Unauthorized - Redirecting to login');
+                onNavigate('signupLanding');
+            }
         } finally {
             setIsLoading(false);
         }
@@ -57,8 +92,22 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ onNavigate }) => {
                 await loadChatRooms(numericId);
 
                 // 실시간 채팅방 업데이트 핸들러 등록
-                const cleanup = websocketManager.onChatRoomUpdate(() => {
+                const cleanup = websocketManager.onChatRoomUpdate(async (roomId) => {
                     if (numericId) {
+                        // 특정 채팅방이 업데이트된 경우 즉시 해당 채팅방만 업데이트
+                        if (roomId) {
+                            const [unreadMap] = await Promise.all([getUnreadCountMap()]);
+                            setChatRooms((prev) =>
+                                prev.map((room) => {
+                                    if (room.roomId === roomId) {
+                                        const storedUnread = unreadMap[String(roomId)] ?? 0;
+                                        return { ...room, unreadCount: storedUnread };
+                                    }
+                                    return room;
+                                })
+                            );
+                        }
+                        // 전체 목록도 백그라운드에서 업데이트
                         loadChatRooms(numericId);
                     }
                 });
@@ -81,50 +130,40 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ onNavigate }) => {
         if (!dateString) return '';
         try {
             const date = new Date(dateString);
-            const now = new Date();
-            const diff = now.getTime() - date.getTime();
-            const diffDays = Math.floor(diff / (1000 * 60 * 60 * 24));
-
-            if (diffDays === 0) {
-                // 오늘
-                const hours = date.getHours();
-                const minutes = date.getMinutes();
-                const period = hours >= 12 ? '오후' : '오전';
-                const displayHours = hours > 12 ? hours - 12 : hours === 0 ? 12 : hours;
-                return `${period} ${displayHours}:${minutes.toString().padStart(2, '0')}`;
-            } else if (diffDays === 1) {
-                return '어제';
-            } else if (diffDays < 7) {
-                return `${diffDays}일 전`;
-            } else {
-                const month = date.getMonth() + 1;
-                const day = date.getDate();
-                return `${month}/${day}`;
-            }
+            const hours = date.getHours();
+            const minutes = date.getMinutes();
+            const period = hours >= 12 ? '오후' : '오전';
+            const displayHours = hours > 12 ? hours - 12 : hours === 0 ? 12 : hours;
+            return `${period} ${displayHours}:${minutes.toString().padStart(2, '0')}`;
         } catch (error) {
             console.error('[ChatScreen] Failed to format time:', error);
             return '';
         }
     };
 
+    const resolveImageUri = (path?: string | null) => {
+        if (!path) return null;
+        if (path.startsWith('http://') || path.startsWith('https://')) {
+            return path;
+        }
+        const base = API_BASE_URL.replace(/\/$/, '');
+        const normalized = path.startsWith('/') ? path : `/${path}`;
+        return `${base}${normalized}`;
+    };
+
     return (
         <View style={[styles.container, { backgroundColor: isDark ? '#000000' : '#FFFFFF' }]}>
             <StatusBar style={isDark ? 'light' : 'dark'} />
 
-            <View
-                style={[
-                    styles.header,
-                    {
-                        paddingTop: 36,
-                        borderBottomColor: isDark ? '#333333' : '#0000001A',
-                    },
-                ]}
-            >
-                <TouchableOpacity onPress={() => onNavigate('main')} style={styles.backButton}>
-                    <BackIcon width={24} height={24} color={isDark ? '#FFFFFF' : '#000000'} />
-                </TouchableOpacity>
+            <View style={[styles.header, { marginTop: insets.top, borderBottomColor: isDark ? '#333333' : '#0000001A' }]}>
+                {/* 채팅 화면에서는 뒤로가기 버튼 제거 */}
+                <View style={styles.headerLeftPlaceholder} />
 
-                <Text style={[styles.headerTitle, { color: isDark ? '#FFFFFF' : '#1E2939' }]}>채팅</Text>
+                <View style={styles.headerTitleWrapper}>
+                    <Text style={[styles.headerTitle, { color: isDark ? '#FFFFFF' : '#1E2939' }]}>채팅</Text>
+                </View>
+
+                <View style={styles.headerRightPlaceholder} />
             </View>
 
             {isLoading ? (
@@ -138,55 +177,82 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ onNavigate }) => {
                     </Text>
                 </View>
             ) : (
-                <ScrollView contentContainerStyle={styles.chatList} showsVerticalScrollIndicator={true}>
+            <ScrollView contentContainerStyle={styles.chatList} showsVerticalScrollIndicator={true}>
                     {chatRooms.map((chat) => (
-                        <TouchableOpacity
-                            key={chat.chatRoomId}
-                            style={[
-                                styles.chatItem,
-                                {
-                                    borderBottomColor: isDark ? '#333333' : '#0000001A',
-                                },
-                            ]}
+                    <TouchableOpacity
+                            key={chat.roomId ?? chat.chatRoomId ?? `${chat.otherUserId}-${chat.lastMessageTimestamp}`}
+                        style={[
+                            styles.chatItem,
+                            {
+                                borderBottomColor: isDark ? '#333333' : '#0000001A',
+                            },
+                        ]}
                         onPress={() =>
                             onNavigate('chatDetail', {
-                                chatName: chat.otherUserName,
-                                chatAge: chat.otherUserAge,
-                                chatRoomId: chat.roomId,
-                                otherUserId: chat.otherUserId,
+                                    chatName: chat.otherUserName,
+                                    chatAge: chat.otherUserAge,
+                                    chatRoomId: chat.roomId,
+                                    otherUserId: chat.otherUserId,
                             })
                         }
-                        >
-                            <View style={styles.profileImageContainer}>
-                                <View style={styles.profileImagePlaceholder}>
-                                    <FemaleIcon width={28} height={28} />
+                    >
+                        <View style={styles.profileImageContainer}>
+                            {chat.otherUserProfileImage ? (
+                                <Image
+                                    source={{ uri: resolveImageUri(chat.otherUserProfileImage) || undefined }}
+                                    style={styles.profileImage}
+                                />
+                            ) : (
+                                <View
+                                    style={[
+                                        styles.profileImagePlaceholder,
+                                        {
+                                            // 성별에 따라 기본 프로필 배경색 분기: 남자(파랑), 여자/기타(핑크)
+                                            backgroundColor:
+                                                chat.otherUserGender === 'MALE' ? '#BFDBFE' : '#FCCEE8',
+                                        },
+                                    ]}
+                                >
+                                    {chat.otherUserGender === 'MALE' ? (
+                                        <MaleAvatarIcon width={28} height={28} />
+                                    ) : (
+                                        <FemaleAvatarIcon width={28} height={28} />
+                                    )}
                                 </View>
-                            </View>
+                            )}
+                        </View>
 
-                            <View style={styles.chatInfo}>
-                                <View style={styles.nameRow}>
-                                    <Text style={[styles.chatName, { color: isDark ? '#FFFFFF' : '#1E2939' }]}>
+                        <View style={styles.chatInfo}>
+                                <View style={styles.chatHeaderRow}>
+                                <Text style={[styles.chatName, { color: isDark ? '#FFFFFF' : '#1E2939' }]}>
                                         {chat.otherUserName}
-                                    </Text>
-                                </View>
-                                <Text style={[styles.lastMessage, { color: isDark ? '#D1D5DC' : '#4A5565' }]}>
-                                    {chat.lastMessage || '메시지가 없습니다.'}
+                                        {chat.otherUserAge ? `(${chat.otherUserAge})` : ''}
                                 </Text>
-                            </View>
+                                    <Text style={[styles.chatTime, { color: isDark ? '#9CA3AF' : '#6A7282' }]}>
+                                        {formatTime(chat.lastMessageTimestamp)}
+                            </Text>
+                        </View>
 
-                            <View style={styles.rightSection}>
-                                <Text style={[styles.chatTime, { color: isDark ? '#9CA3AF' : '#6A7282' }]}>
-                                    {formatTime(chat.lastMessageTimestamp)}
-                                </Text>
-                                {(chat.unreadCount ?? 0) > 0 && (
-                                    <View style={styles.unreadBadge}>
-                                        <Text style={styles.unreadBadgeText}>{chat.unreadCount}</Text>
-                                    </View>
-                                )}
-                            </View>
-                        </TouchableOpacity>
-                    ))}
-                </ScrollView>
+                                <View style={styles.chatMessageRow}>
+                                    <Text 
+                                        style={[styles.lastMessage, { color: isDark ? '#D1D5DC' : '#4A5565' }]}
+                                        numberOfLines={1}
+                                        ellipsizeMode="tail"
+                                    >
+                                        {chat.lastMessage || '메시지가 없습니다.'}
+                            </Text>
+                                    {(chat.unreadCount ?? 0) > 0 && (
+                                <View style={styles.unreadBadge}>
+                                            <Text style={styles.unreadBadgeText}>
+                                                {(chat.unreadCount ?? 0) > 99 ? '99+' : chat.unreadCount}
+                                            </Text>
+                                </View>
+                            )}
+                                </View>
+                        </View>
+                    </TouchableOpacity>
+                ))}
+            </ScrollView>
             )}
 
             <BottomNavigation onNavigate={onNavigate} currentScreen={'chat'} />
@@ -199,24 +265,20 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
         paddingHorizontal: 24,
         paddingVertical: 35,
         borderBottomWidth: 1.35,
-        justifyContent: 'center',
     },
-    backButton: {
-        position: 'absolute',
-        left: 24,
-        width: 24,
-        height: 24,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
+    headerLeftPlaceholder: { width: 24, height: 24 },
+    headerTitleWrapper: { flex: 1, alignItems: 'center' },
+    headerRightPlaceholder: { width: 24, height: 24 },
     headerTitle: {
         fontSize: 20,
         fontWeight: '400',
         lineHeight: 24,
-        textAlign: 'center',
     },
     chatList: {
         flexGrow: 1,
@@ -238,32 +300,41 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
+    profileImage: {
+        width: 56,
+        height: 56,
+        borderRadius: 28,
+        backgroundColor: '#FCCEE8',
+    },
     chatInfo: {
         flex: 1,
         justifyContent: 'center',
     },
-    nameRow: {
+    chatHeaderRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 5,
+        justifyContent: 'space-between',
+        marginBottom: 6,
     },
     chatName: {
         fontSize: 16,
-        fontWeight: '400',
-        lineHeight: 24,
+        fontWeight: '600',
+        lineHeight: 22,
+    },
+    chatMessageRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 8,
     },
     lastMessage: {
         fontSize: 14,
         lineHeight: 20,
-    },
-    rightSection: {
-        alignItems: 'flex-end',
-        justifyContent: 'center',
+        flex: 1,
     },
     chatTime: {
         fontSize: 12,
         lineHeight: 16,
-        marginBottom: 8,
     },
     unreadBadge: {
         backgroundColor: '#F6339A',

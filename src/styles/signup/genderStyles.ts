@@ -22,9 +22,9 @@ export default StyleSheet.create({
         paddingRight: 13,
     },
     genderButtonSelectedMale: {
-        backgroundColor: colors.pink[50],
-        borderColor: colors.pink[500],
-        borderTopColor: colors.pink[500],
+        backgroundColor: '#EFF6FF', // 파란색 배경
+        borderColor: '#3B82F6', // 파란색 테두리
+        borderTopColor: '#3B82F6',
     },
     genderButtonSelectedFemale: {
         backgroundColor: colors.pink[50],
@@ -40,7 +40,7 @@ export default StyleSheet.create({
         fontSize: 16,
     },
     genderButtonTextSelectedMale: {
-        color: colors.pink[700],
+        color: '#1E40AF', // 진한 파란색 텍스트
         fontWeight: '400',
     },
     genderButtonTextSelectedFemale: {

@@ -22,7 +22,19 @@ const HeightInput: React.FC<HeightInputProps> = ({
 }) => {
     const handleChange = (text: string) => {
         const onlyNumbers = text.replace(/[^0-9]/g, '');
-        onChange(onlyNumbers);
+        if (!onlyNumbers) {
+            onChange('');
+            return;
+        }
+
+        const numeric = parseInt(onlyNumbers, 10);
+        if (Number.isNaN(numeric)) {
+            onChange('');
+            return;
+        }
+
+        const clamped = Math.min(numeric, 300);
+        onChange(String(clamped));
     };
 
     return (

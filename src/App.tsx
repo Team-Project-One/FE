@@ -1,8 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import './theme/global.css';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { Text, TextInput } from 'react-native';
+import { Text, TextInput, AppState, AppStateStatus, LogBox } from 'react-native';
 import { useFonts, Arimo_400Regular, Arimo_700Bold } from '@expo-google-fonts/arimo';
+import { requestNotificationPermissions } from './utils/notifications';
+
+// 에뮬레이터에서 에러/경고 모달 비활성화 (시연용)
+LogBox.ignoreAllLogs(true);
 
 import MainScreen from './screen/MainScreen';
 import SignupLandingScreen from './screen/SignupLandingScreen';
@@ -47,6 +51,11 @@ const App: React.FC = () => {
             TextInput.defaultProps.style = [TextInput.defaultProps.style, { fontFamily: 'Arimo_400Regular' }];
         }
     }, [fontsLoaded]);
+
+    // 알림 권한 요청 (앱 시작 시)
+    useEffect(() => {
+        requestNotificationPermissions();
+    }, []);
 
     if (!fontsLoaded) return null;
 
@@ -99,6 +108,7 @@ const App: React.FC = () => {
                         chatAge={appState.chatDetailAge}
                         chatRoomId={appState.routeParams?.chatRoomId}
                         otherUserId={appState.routeParams?.otherUserId}
+                        showTip={appState.routeParams?.showTip}
                     />
                 );
             case 'matchingResult':

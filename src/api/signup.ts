@@ -1,4 +1,4 @@
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 
 import { SignupFormState, SignupResponse } from '../types';
 import { postMultipart } from './client';
@@ -78,6 +78,11 @@ const contactFrequencyMap: Record<string, string> = {
     '중요하지 않음': 'NOT_IMPORTANT',
 };
 
+const sexualOrientationMap: Record<string, string> = {
+    이성애자: 'STRAIGHT',
+    동성애자: 'HOMOSEXUAL',
+};
+
 const defaultSexualOrientation = 'STRAIGHT';
 
 // 역방향 매핑 (Enum → 한글)
@@ -116,6 +121,11 @@ const religionReverseMap: Record<string, string> = {
 const contactFrequencyReverseMap: Record<string, string> = {
     IMPORTANT: '중요함',
     NOT_IMPORTANT: '중요하지 않음',
+};
+
+const sexualOrientationReverseMap: Record<string, string> = {
+    STRAIGHT: '이성애자',
+    HOMOSEXUAL: '동성애자',
 };
 
 const regionReverseMap: Record<string, string> = {
@@ -159,7 +169,9 @@ export const mapEnumToDisplayValue = (field: SignupEnumField, enumValue: string 
             ? religionReverseMap[enumValue]
             : field === 'contactFrequency'
             ? contactFrequencyReverseMap[enumValue]
-            : enumValue; // mbti, sexualOrientation 등은 그대로 반환
+            : field === 'sexualOrientation'
+            ? sexualOrientationReverseMap[enumValue]
+            : enumValue; // mbti 등은 그대로 반환
 
     return displayValue || '';
 };
@@ -187,7 +199,7 @@ export const mapFieldValue = (field: SignupEnumField, value: string) => {
             : field === 'contactFrequency'
             ? contactFrequencyMap[value]
             : field === 'sexualOrientation'
-            ? value
+            ? sexualOrientationMap[value] || value
             : value;
 
     if (!normalized) {
@@ -232,8 +244,16 @@ const createMultipartPayload = async (formState: SignupFormState) => {
     appendString(formData, 'petPreference', mapFieldValue('petPreference', formState.pets));
     appendString(formData, 'religion', mapFieldValue('religion', formState.religion));
     appendString(formData, 'contactFrequency', mapFieldValue('contactFrequency', formState.contactFrequency));
-    appendString(formData, 'mbti', formState.mbti);
-    appendString(formData, 'introduction', formState.introduction?.trim() ?? '');
+    // MBTI는 선택 optional. 미입력 시 'UNKNOWN'으로 보내 BE에서 null로 초기화하도록 처리
+    appendString(
+        formData,
+        'mbti',
+        formState.mbti && formState.mbti.trim() ? formState.mbti.trim() : 'UNKNOWN'
+    );
+
+    const introTrimmed = formState.introduction?.trim() ?? '';
+    const introLimited = introTrimmed.length > 255 ? introTrimmed.slice(0, 255) : introTrimmed;
+    appendString(formData, 'introduction', introLimited);
 
     if (formState.profileImageUri) {
         const uri = formState.profileImageUri;
@@ -272,7 +292,7 @@ export const submitSignup = async (formState: SignupFormState): Promise<SignupRe
         'pets',
         'religion',
         'contactFrequency',
-        'mbti',
+        // 'mbti'는 선택 사항이므로 requiredFields에서 제외
     ];
 
     const missing = requiredFields.filter((field) => !formState[field]);

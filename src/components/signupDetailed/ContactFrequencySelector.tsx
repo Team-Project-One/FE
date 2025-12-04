@@ -20,7 +20,10 @@ const ContactFrequencySelector: React.FC<ContactFrequencySelectorProps> = ({
     borderColor = '#9CA3AF',
     textColor = '#364153',
 }) => {
-    const toggle = (next: string) => onChange(value === next ? '' : next);
+    const handleSelect = (next: string) => {
+        if (value === next) return;
+        onChange(next);
+    };
 
     return (
         <View style={styles.inputGroup}>
@@ -31,7 +34,7 @@ const ContactFrequencySelector: React.FC<ContactFrequencySelectorProps> = ({
                     <SelectableButton
                         label="중요함"
                         selected={value === '중요함'}
-                        onPress={() => toggle('중요함')}
+                        onPress={() => handleSelect('중요함')}
                         error={error && !value}
                         bgColor={bgColor}
                         borderColor={borderColor}
@@ -41,7 +44,7 @@ const ContactFrequencySelector: React.FC<ContactFrequencySelectorProps> = ({
                     <SelectableButton
                         label="중요하지 않음"
                         selected={value === '중요하지 않음'}
-                        onPress={() => toggle('중요하지 않음')}
+                        onPress={() => handleSelect('중요하지 않음')}
                         error={error && !value}
                         bgColor={bgColor}
                         borderColor={borderColor}

@@ -22,6 +22,7 @@ import { useTheme } from '../theme/ThemeContext';
 import { fetchMyPage, updateProfile } from '../api/mypage';
 import { mapEnumToDisplayValue } from '../api/signup';
 import { ApiError } from '../api/client';
+import ConfirmModal from '../components/ConfirmModal';
 
 const ProfileEditScreen: React.FC<SignupDetailedScreenProps> = ({ onNavigate }) => {
     const insets = useSafeAreaInsets();
@@ -40,6 +41,7 @@ const ProfileEditScreen: React.FC<SignupDetailedScreenProps> = ({ onNavigate }) 
         mbti: '',
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [showSuccessModal, setShowSuccessModal] = useState(false);
 
     // DB에서 프로필 데이터를 가져와서 formData에 설정
     useEffect(() => {
@@ -95,12 +97,7 @@ const ProfileEditScreen: React.FC<SignupDetailedScreenProps> = ({ onNavigate }) 
             console.log('[ProfileEditScreen] Calling updateProfile with userId:', numericId);
             await updateProfile(numericId, formData);
             console.log('[ProfileEditScreen] Profile updated successfully');
-            Alert.alert('성공', '프로필이 수정되었습니다.', [
-                {
-                    text: '확인',
-                    onPress: () => onNavigate('mypage'),
-                },
-            ]);
+            setShowSuccessModal(true);
         } catch (err) {
             console.error('[ProfileEditScreen] Profile update failed', err);
             if (err instanceof ApiError || err instanceof Error) {
@@ -138,7 +135,7 @@ const ProfileEditScreen: React.FC<SignupDetailedScreenProps> = ({ onNavigate }) 
                     },
                 ]}
             >
-                <TouchableOpacity onPress={() => onNavigate('main')} style={localStyles.backButton}>
+                <TouchableOpacity onPress={() => onNavigate('mypage')} style={localStyles.backButton}>
                     <BackIcon width={24} height={24} color={colorSet.text} />
                 </TouchableOpacity>
 
@@ -259,6 +256,21 @@ const ProfileEditScreen: React.FC<SignupDetailedScreenProps> = ({ onNavigate }) 
                     입력하신 정보는 매칭을 위해서만 사용됩니다.
                 </Text>
             </View>
+            <ConfirmModal
+                visible={showSuccessModal}
+                title="프로필 수정 완료"
+                message="프로필 수정이 완료되었습니다!"
+                confirmText="확인"
+                cancelText=""
+                onConfirm={() => {
+                    setShowSuccessModal(false);
+                    onNavigate('mypage');
+                }}
+                onCancel={() => {
+                    setShowSuccessModal(false);
+                    onNavigate('mypage');
+                }}
+            />
         </View>
     );
 };

@@ -21,7 +21,10 @@ const PetsSelector: React.FC<PetsSelectorProps> = ({
     textColor = '#364153',
 }) => {
     const hasError = error && !value;
-    const toggle = (next: string) => onChange(value === next ? '' : next);
+    const handleSelect = (next: string) => {
+        if (value === next) return;
+        onChange(next);
+    };
 
     return (
         <View style={styles.inputGroup}>
@@ -32,7 +35,7 @@ const PetsSelector: React.FC<PetsSelectorProps> = ({
                     <SelectableButton
                         label="없음"
                         selected={value === '없음'}
-                        onPress={() => toggle('없음')}
+                        onPress={() => handleSelect('없음')}
                         error={hasError}
                         bgColor={bgColor}
                         borderColor={borderColor}
@@ -42,7 +45,7 @@ const PetsSelector: React.FC<PetsSelectorProps> = ({
                     <SelectableButton
                         label="강아지"
                         selected={value === '강아지'}
-                        onPress={() => toggle('강아지')}
+                        onPress={() => handleSelect('강아지')}
                         error={hasError}
                         bgColor={bgColor}
                         borderColor={borderColor}
@@ -54,7 +57,7 @@ const PetsSelector: React.FC<PetsSelectorProps> = ({
                     <SelectableButton
                         label="고양이"
                         selected={value === '고양이'}
-                        onPress={() => toggle('고양이')}
+                        onPress={() => handleSelect('고양이')}
                         error={hasError}
                         bgColor={bgColor}
                         borderColor={borderColor}
@@ -64,7 +67,7 @@ const PetsSelector: React.FC<PetsSelectorProps> = ({
                     <SelectableButton
                         label="기타"
                         selected={value === '기타'}
-                        onPress={() => toggle('기타')}
+                        onPress={() => handleSelect('기타')}
                         error={hasError}
                         bgColor={bgColor}
                         borderColor={borderColor}
