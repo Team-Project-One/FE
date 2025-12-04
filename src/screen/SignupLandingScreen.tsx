@@ -8,14 +8,17 @@ import DivineLogoSvg from '../../assets/divine.svg';
 
 const { width, height } = Dimensions.get('window');
 
-const backgroundImages = ['/couple1.jpg', '/couple2.jpg', '/couple3.jpg'];
+const backgroundImages = [
+    require('../../assets/mainScreen1.jpg'),
+    require('../../assets/mainScreen2.jpg'),
+    require('../../assets/mainScreen3.jpg'),
+] as const;
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#1a1a1a' },
     backgroundContainer: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
-    backgroundImageWrapper: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
-    backgroundImage: { flex: 1, width: width, height: height },
-    backgroundImageHidden: { position: 'absolute', width: width, height: height, opacity: 0 },
+    backgroundImage: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, width, height },
+    animatedBackground: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
     overlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.4)' },
     contentWrapper: { flex: 1, zIndex: 10 },
     header: { paddingHorizontal: 20, paddingBottom: 30, alignItems: 'center' },
@@ -49,84 +52,53 @@ const DivineLogo = () => (
 const SignupLandingScreen: React.FC<SignupLandingScreenProps> = ({ onNavigate }) => {
     const insets = useSafeAreaInsets();
 
-    // 전환 상태
-    const [current, setCurrent] = useState(0);
-    const [next, setNext] = useState(1);
-    const [isNextReady, setIsNextReady] = useState(false);
-
-    const fade = useRef(new Animated.Value(1)).current;
-    const isTransitioning = useRef(false);
-
-    // 전환 애니메이션
-    const startTransition = (nextIndex: number) => {
-        if (isTransitioning.current) return;
-        isTransitioning.current = true;
-
-        Animated.timing(fade, {
-            toValue: 0,
-            duration: 2000,
-            useNativeDriver: true,
-        }).start(() => {
-            const newCurrent = nextIndex;
-            const newNext = (newCurrent + 1) % backgroundImages.length;
-
-            setCurrent(newCurrent);
-            setNext(newNext);
-            fade.setValue(1);
-
-            isTransitioning.current = false;
-            setIsNextReady(false);
-        });
-    };
-
-    const DISPLAY_DURATION = 5000;
+    const [currentBackgroundIndex, setCurrentBackgroundIndex] = useState(0);
+    const [nextBackgroundIndex, setNextBackgroundIndex] = useState(1);
+    const fadeAnim = useRef(new Animated.Value(0)).current;
 
     useEffect(() => {
         const interval = setInterval(() => {
-            if (!isTransitioning.current && isNextReady) {
-                startTransition(next);
-            }
-        }, DISPLAY_DURATION);
+            const nextIdx = (currentBackgroundIndex + 1) % backgroundImages.length;
+            setNextBackgroundIndex(nextIdx);
+            fadeAnim.stopAnimation();
+            fadeAnim.setValue(0);
+            Animated.timing(fadeAnim, {
+                toValue: 1,
+                duration: 1500,
+                useNativeDriver: true,
+            }).start(() => {
+                setCurrentBackgroundIndex(nextIdx);
+                fadeAnim.setValue(1);
+            });
+        }, 5000);
 
         return () => clearInterval(interval);
-    }, [isNextReady, next]);
-
-    const nextOpacity = fade.interpolate({
-        inputRange: [0, 1],
-        outputRange: [1, 0],
-    });
+    }, [currentBackgroundIndex, fadeAnim]);
 
     return (
         <View style={styles.container}>
             <StatusBar style="light" />
 
             <View style={styles.backgroundContainer}>
-                <Animated.View style={[styles.backgroundImageWrapper, { opacity: fade }]}>
-                    <ImageBackground
-                        source={{ uri: backgroundImages[current] }}
-                        style={styles.backgroundImage}
-                        resizeMode="cover"
-                    >
-                        <View style={styles.overlay} />
-                    </ImageBackground>
-                </Animated.View>
-
-                <ImageBackground
-                    source={{ uri: backgroundImages[next] }}
-                    style={styles.backgroundImageHidden}
+                <Animated.Image
+                    source={backgroundImages[currentBackgroundIndex]}
+                    style={[
+                        styles.backgroundImage,
+                        {
+                            opacity: fadeAnim.interpolate({
+                                inputRange: [0, 1],
+                                outputRange: [1, 0],
+                            }),
+                        },
+                    ]}
                     resizeMode="cover"
-                    onLoad={() => setIsNextReady(true)}
                 />
-
-                <Animated.View style={[styles.backgroundImageWrapper, { opacity: nextOpacity }]}>
-                    <ImageBackground
-                        source={{ uri: backgroundImages[next] }}
-                        style={styles.backgroundImage}
-                        resizeMode="cover"
-                    >
-                        <View style={styles.overlay} />
-                    </ImageBackground>
-                </Animated.View>
+                <Animated.Image
+                    source={backgroundImages[nextBackgroundIndex]}
+                    style={[styles.backgroundImage, styles.animatedBackground, { opacity: fadeAnim }]}
+                    resizeMode="cover"
+                />
+                <View style={styles.overlay} />
             </View>
 
             <View style={styles.contentWrapper}>

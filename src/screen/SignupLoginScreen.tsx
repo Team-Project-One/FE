@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { LinearGradient } from "expo-linear-gradient";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { login, KakaoOAuthToken } from "@react-native-seoul/kakao-login";
 import { Screen, SignupLoginScreenProps } from "../types";
@@ -32,6 +33,7 @@ const KAKAO_MOBILE_LOGIN_ENDPOINT =
 const SignupLoginScreen: React.FC<SignupLoginScreenProps> = ({
   onNavigate,
 }) => {
+  const insets = useSafeAreaInsets();
   const [isLoading, setIsLoading] = useState(false);
   const { updateSignupData } = useSignup();
 
@@ -243,6 +245,29 @@ const SignupLoginScreen: React.FC<SignupLoginScreenProps> = ({
     }
   }, [navigateToScreen, processLoginTokens]);
 
+  const handleTestLoginC = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      console.log("테스트 로그인 (User C) 시작...");
+      const tokens = await requestTestLogin({ testUserNumber: 3 });
+      const targetScreen = await processLoginTokens(tokens);
+      console.log("테스트 로그인 네비게이션:", targetScreen);
+      setIsLoading(false);
+      navigateToScreen(targetScreen);
+    } catch (error: any) {
+      console.error("테스트 로그인 오류", error);
+      const errorMessage = error?.message || error?.toString() || "테스트 로그인 중 오류가 발생했습니다.";
+      Alert.alert("테스트 로그인 오류", errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [navigateToScreen, processLoginTokens]);
+
+  const handleSignupClick = useCallback(() => {
+    console.log("회원가입 플로우로 이동");
+    navigateToScreen("signupBasic");
+  }, [navigateToScreen]);
+
   return (
     <LinearGradient
       colors={["#FDF2F8", "#FCE7F3"]}
@@ -284,6 +309,7 @@ const SignupLoginScreen: React.FC<SignupLoginScreenProps> = ({
           </Text>
 
           {__DEV__ && (
+            <>
             <TouchableOpacity
               style={styles.testLoginButton}
               onPress={handleTestLogin}
@@ -291,9 +317,26 @@ const SignupLoginScreen: React.FC<SignupLoginScreenProps> = ({
             >
               <Text style={styles.testLoginText}>테스트 로그인 (User B)</Text>
             </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.testLoginButton}
+                onPress={handleTestLoginC}
+                disabled={isLoading}
+              >
+                <Text style={styles.testLoginText}>테스트 로그인 (User C)</Text>
+              </TouchableOpacity>
+            </>
           )}
         </View>
       </View>
+
+      {/* 회원가입 버튼 - 우측 하단 */}
+      <TouchableOpacity
+        style={[styles.signupButton, { bottom: insets.bottom + 16 }]}
+        onPress={handleSignupClick}
+        disabled={isLoading}
+      >
+        <Text style={styles.signupButtonText}>회원가입</Text>
+      </TouchableOpacity>
     </LinearGradient>
   );
 };
@@ -359,6 +402,20 @@ const styles = StyleSheet.create({
     borderColor: "#E5E7EB",
   },
   testLoginText: {
+    fontSize: 12,
+    color: "#9CA3AF",
+    textAlign: "center",
+  },
+  signupButton: {
+    position: "absolute",
+    right: 24,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+  },
+  signupButtonText: {
     fontSize: 12,
     color: "#9CA3AF",
     textAlign: "center",

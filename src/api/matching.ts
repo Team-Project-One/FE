@@ -35,9 +35,39 @@ export interface MatchingResult {
     personInfo: MatchingPersonInfo;
 }
 
-export const fetchMatchingResult = async (userId: number): Promise<MatchingResult> => {
+export const fetchMatchingResult = async (userId: number, excludeUserId?: number): Promise<MatchingResult> => {
     const accessToken = await AsyncStorage.getItem('@auth/accessToken');
-    const response = await request<any>(`/matching/${userId}`, {
+    const excludeParam = excludeUserId ? `?excludeUserId=${excludeUserId}` : '';
+    const response = await request<any>(`/matching/${userId}${excludeParam}`, {
+        headers: accessToken
+            ? {
+                  Authorization: `Bearer ${accessToken}`,
+              }
+            : undefined,
+    });
+    
+    // API 응답이 snake_case로 오므로 camelCase로 변환
+    return {
+        sajuResponse: {
+            originalScore: response.sajuResponse?.original_score ?? response.sajuResponse?.originalScore ?? 0,
+            finalScore: response.sajuResponse?.final_score ?? response.sajuResponse?.finalScore ?? 0,
+            stressScore: response.sajuResponse?.stress_score ?? response.sajuResponse?.stressScore ?? 0,
+            person1SalAnalysis: response.sajuResponse?.person1_sal_analysis ?? response.sajuResponse?.person1SalAnalysis ?? '',
+            person2SalAnalysis: response.sajuResponse?.person2_sal_analysis ?? response.sajuResponse?.person2SalAnalysis ?? '',
+            matchAnalysis: response.sajuResponse?.match_analysis ?? response.sajuResponse?.matchAnalysis ?? '',
+            error: response.sajuResponse?.error ?? null,
+        },
+        personInfo: response.personInfo,
+    };
+};
+
+// 특정 상대방과의 매칭 결과 가져오기
+export const fetchMatchingResultWithMatchedUser = async (
+    myUserId: number,
+    matchedUserId: number
+): Promise<MatchingResult> => {
+    const accessToken = await AsyncStorage.getItem('@auth/accessToken');
+    const response = await request<any>(`/matching/${myUserId}/${matchedUserId}`, {
         headers: accessToken
             ? {
                   Authorization: `Bearer ${accessToken}`,

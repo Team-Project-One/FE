@@ -39,11 +39,20 @@ const MbtiSelector: React.FC<MbtiSelectorProps> = ({
     borderColor = '#9CA3AF',
     textColor = '#364153',
 }) => {
-    const toggle = (next: string) => onChange(value === next ? '' : next);
-
+    // MBTI는 다시 눌러서 선택 해제가 가능하도록 (null 허용)
+    const handleSelect = (next: string) => {
+        if (value === next) {
+            onChange('');
+        } else {
+            onChange(next);
+        }
+    };
     return (
         <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: textColor }]}>MBTI</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                <Text style={[styles.label, { color: textColor }]}>MBTI</Text>
+                <Text style={{ fontSize: 12, color: '#9CA3AF', marginLeft: 8 }}>모르면 안 고르셔도 됩니다!</Text>
+            </View>
 
             <View style={styles.mbtiGrid}>
                 {mbtiTypes.map((mbti) => (
@@ -51,7 +60,7 @@ const MbtiSelector: React.FC<MbtiSelectorProps> = ({
                         key={mbti}
                         label={mbti}
                         selected={value === mbti}
-                        onPress={() => toggle(mbti)}
+                        onPress={() => handleSelect(mbti)}
                         error={error}
                         bgColor={bgColor}
                         borderColor={borderColor}

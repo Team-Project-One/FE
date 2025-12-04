@@ -21,7 +21,12 @@ const DrinkingSelector: React.FC<DrinkingSelectorProps> = ({
     borderColor = '#9CA3AF',
     textColor = '#364153',
 }) => {
-    const toggle = (next: string) => onChange(value === next ? '' : next);
+    // 한번 선택한 옵션을 다시 눌러도 해제되지 않도록 하고,
+    // 다른 옵션을 눌렀을 때만 선택이 변경되도록 처리
+    const handleSelect = (next: string) => {
+        if (value === next) return;
+        onChange(next);
+    };
 
     return (
         <View style={styles.inputGroup}>
@@ -32,7 +37,7 @@ const DrinkingSelector: React.FC<DrinkingSelectorProps> = ({
                     <SelectableButton
                         label="안 마심"
                         selected={value === '안 마심'}
-                        onPress={() => toggle('안 마심')}
+                        onPress={() => handleSelect('안 마심')}
                         error={error && !value}
                         bgColor={bgColor}
                         borderColor={borderColor}
@@ -41,7 +46,7 @@ const DrinkingSelector: React.FC<DrinkingSelectorProps> = ({
                     <SelectableButton
                         label="주 1회 이하"
                         selected={value === '주 1회 이하'}
-                        onPress={() => toggle('주 1회 이하')}
+                        onPress={() => handleSelect('주 1회 이하')}
                         error={error && !value}
                         bgColor={bgColor}
                         borderColor={borderColor}
@@ -53,7 +58,7 @@ const DrinkingSelector: React.FC<DrinkingSelectorProps> = ({
                     <SelectableButton
                         label="주 1-2회"
                         selected={value === '주 1-2회'}
-                        onPress={() => toggle('주 1-2회')}
+                        onPress={() => handleSelect('주 1-2회')}
                         error={error && !value}
                         bgColor={bgColor}
                         borderColor={borderColor}
@@ -62,7 +67,7 @@ const DrinkingSelector: React.FC<DrinkingSelectorProps> = ({
                     <SelectableButton
                         label="주 3회 이상"
                         selected={value === '주 3회 이상'}
-                        onPress={() => toggle('주 3회 이상')}
+                        onPress={() => handleSelect('주 3회 이상')}
                         error={error && !value}
                         bgColor={bgColor}
                         borderColor={borderColor}

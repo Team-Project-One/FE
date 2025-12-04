@@ -9,7 +9,8 @@ import { SignupSelfIntroScreenProps } from '../types';
 import BasicProgressHeader from '../components/signup/BasicProgressHeader';
 import { useSignup } from '../context/SignupContext';
 
-const MAX_LEN = 500;
+// DB introduction 컬럼 길이 제한에 맞춰 255자로 제한
+const MAX_LEN = 255;
 
 const GradientText: React.FC<{
     text: string;

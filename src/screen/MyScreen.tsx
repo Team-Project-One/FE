@@ -1,22 +1,27 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Image, Alert, TextInput, ActivityIndicator } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import BackIcon from '../assets/back.svg';
 import CameraIcon from '../assets/camera.svg';
 import FemaleIcon from '../assets/femaleIcon.svg';
+import MaleIcon from '../assets/maleIcon.svg';
 import PencilIcon from '../assets/pencil.svg';
 import Pencil2Icon from '../assets/pencil2.svg';
 import OptionIcon from '../assets/option.svg';
 import LogoutIcon from '../assets/logout.svg';
-import AvartarIcon from '../assets/female.svg';
+import FemaleAvatarIcon from '../assets/female.svg';
+import MaleAvatarIcon from '../assets/male.svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import * as ImagePicker from 'expo-image-picker';
 import { MyPageData, MyScreenProps } from '../types';
 import BottomNavigation from '../components/BottomNavigation';
 import { useTheme } from '../theme/ThemeContext';
-import { fetchMyPage, updateIntroduction } from '../api/mypage';
+import { fetchMyPage, updateIntroduction, updateProfileImage, deleteProfileImage } from '../api/mypage';
+import ConfirmModal from '../components/ConfirmModal';
+import { API_BASE_URL } from '../api/config';
 import { ApiError } from '../api/client';
+import { mapEnumToDisplayValue } from '../api/signup';
 
 const MyScreen: React.FC<MyScreenProps> = ({ onNavigate }) => {
     const insets = useSafeAreaInsets();
@@ -30,53 +35,140 @@ const MyScreen: React.FC<MyScreenProps> = ({ onNavigate }) => {
     const [isSavingIntro, setIsSavingIntro] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+    const [showLogoutConfirmModal, setShowLogoutConfirmModal] = useState(false);
+    const [showLogoutErrorModal, setShowLogoutErrorModal] = useState(false);
 
-    useEffect(() => {
-        const loadProfile = async () => {
-            try {
-                setIsLoading(true);
-                const storedId = await AsyncStorage.getItem('@auth/userId');
-                const numericId = storedId ? Number(storedId) : null;
-                if (!numericId) {
-                    setError('로그인 정보를 찾을 수 없습니다.');
-                    setIsLoading(false);
-                    return;
-                }
-                const data = await fetchMyPage(numericId);
-                console.log('[MyScreen] fetched data', data);
-                console.log('[MyScreen] fetched profile', data);
-                setProfileData(data);
-                setSelfIntroduction(data.introduction || '');
-                if (data.profileImagePath) {
-                    setProfilePhoto(data.profileImagePath);
-                }
-            } catch (err) {
-                console.error('마이페이지 정보 조회 실패', err);
-                setError('마이페이지 정보를 불러오지 못했습니다.');
-            } finally {
+    const resolveImageUri = (path?: string | null) => {
+        if (!path) return '';
+        if (path.startsWith('http://') || path.startsWith('https://')) {
+            return path;
+        }
+        const base = API_BASE_URL.replace(/\/$/, '');
+        const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+        return `${base}${normalizedPath}`;
+    };
+
+    const loadProfile = useCallback(async () => {
+        try {
+            setIsLoading(true);
+            const storedId = await AsyncStorage.getItem('@auth/userId');
+            const numericId = storedId ? Number(storedId) : null;
+            if (!numericId) {
+                setError('로그인 정보를 찾을 수 없습니다.');
                 setIsLoading(false);
+                return;
             }
-        };
-
-        loadProfile();
+            const data = await fetchMyPage(numericId);
+            console.log('[MyScreen] fetched data', data);
+            setProfileData(data);
+            setSelfIntroduction(data.introduction || '');
+            if (data.profileImagePath) {
+                const resolved = resolveImageUri(data.profileImagePath);
+                console.log('[MyScreen] resolved profile photo', resolved);
+                setProfilePhoto(resolved);
+            } else {
+                console.log('[MyScreen] no profile image path, clearing photo');
+                setProfilePhoto('');
+            }
+        } catch (err) {
+            console.error('마이페이지 정보 조회 실패', err);
+            setError('마이페이지 정보를 불러오지 못했습니다.');
+        } finally {
+            setIsLoading(false);
+        }
     }, []);
 
+    useEffect(() => {
+        loadProfile();
+    }, [loadProfile]);
+
     const handlePhotoUpload = async () => {
-        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-        if (status !== 'granted') {
-            Alert.alert('권한 필요', '사진을 업로드하려면 갤러리 접근 권한이 필요합니다.');
-            return;
-        }
+        try {
+            const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+            if (status !== 'granted') {
+                Alert.alert('권한 필요', '사진을 업로드하려면 갤러리 접근 권한이 필요합니다.');
+                return;
+            }
 
-        const result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images,
-            allowsEditing: true,
-            aspect: [1, 1],
-            quality: 0.8,
-        });
+            // 기본 프로필 / 앨범 선택 옵션 제공
+            Alert.alert(
+                '프로필 사진',
+                '프로필 사진을 어떻게 하시겠어요?',
+                [
+                    {
+                        text: '기본 이미지로 변경',
+                        style: 'destructive',
+                        onPress: async () => {
+                            try {
+                                setIsUploadingPhoto(true);
+                                const storedId = await AsyncStorage.getItem('@auth/userId');
+                                const numericId = storedId ? Number(storedId) : null;
+                                if (!numericId) {
+                                    throw new Error('로그인 정보를 찾을 수 없습니다.');
+                                }
 
-        if (!result.canceled && result.assets[0]) {
-            setProfilePhoto(result.assets[0].uri);
+                                await deleteProfileImage(numericId);
+                                await loadProfile();
+                                Alert.alert('완료', '기본 프로필 이미지로 변경되었습니다.');
+                            } catch (err) {
+                                console.error('[MyScreen] Failed to delete profile image', err);
+                                Alert.alert('오류', '프로필 이미지를 삭제하지 못했습니다.');
+                            } finally {
+                                setIsUploadingPhoto(false);
+                            }
+                        },
+                    },
+                    {
+                        text: '앨범에서 선택',
+                        onPress: async () => {
+                            const result = await ImagePicker.launchImageLibraryAsync({
+                                mediaTypes: 'images',
+                                allowsEditing: true,
+                                aspect: [1, 1],
+                                quality: 0.8,
+                            });
+
+                            if (!result.canceled && result.assets[0]) {
+                                const asset = result.assets[0];
+                                const previousPhoto = profilePhoto;
+                                setProfilePhoto(asset.uri);
+
+                                try {
+                                    setIsUploadingPhoto(true);
+                                    const storedId = await AsyncStorage.getItem('@auth/userId');
+                                    const numericId = storedId ? Number(storedId) : null;
+                                    if (!numericId) {
+                                        throw new Error('로그인 정보를 찾을 수 없습니다.');
+                                    }
+
+                                    const uploadedPath = await updateProfileImage(numericId, {
+                                        uri: asset.uri,
+                                        name: asset.fileName ?? 'profile.jpg',
+                                        type: asset.mimeType ?? 'image/jpeg',
+                                    });
+
+                                    if (uploadedPath) {
+                                        await loadProfile();
+                                    }
+                                    Alert.alert('완료', '프로필 이미지가 변경되었습니다.');
+                                } catch (uploadError) {
+                                    console.error('[MyScreen] Failed to upload profile image', uploadError);
+                                    Alert.alert('오류', '프로필 이미지를 업로드하지 못했습니다.');
+                                    setProfilePhoto(previousPhoto);
+                                } finally {
+                                    setIsUploadingPhoto(false);
+                                }
+                            }
+                        },
+                    },
+                    { text: '취소', style: 'cancel' },
+                ],
+                { cancelable: true }
+            );
+        } catch (err) {
+            console.error('[MyScreen] handlePhotoUpload error', err);
+            Alert.alert('오류', '프로필 이미지를 처리하는 중 문제가 발생했습니다.');
         }
     };
 
@@ -110,6 +202,21 @@ const MyScreen: React.FC<MyScreenProps> = ({ onNavigate }) => {
         }
     };
 
+    const handleLogout = () => {
+        setShowLogoutConfirmModal(true);
+    };
+
+    const handleLogoutConfirm = async () => {
+        setShowLogoutConfirmModal(false);
+                    try {
+                        await AsyncStorage.multiRemove(['@auth/accessToken', '@auth/refreshToken', '@auth/userId']);
+                        onNavigate('signupLanding');
+                    } catch (err) {
+                        console.error('[MyScreen] Logout failed', err);
+            setShowLogoutErrorModal(true);
+                    }
+    };
+
     if (isLoading) {
         return (
             <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
@@ -140,9 +247,8 @@ const MyScreen: React.FC<MyScreenProps> = ({ onNavigate }) => {
                     },
                 ]}
             >
-                <TouchableOpacity onPress={() => onNavigate('main')} style={styles.backButton}>
-                    <BackIcon width={24} height={24} color={isDark ? '#FFFFFF' : '#000000'} />
-                </TouchableOpacity>
+                {/* 마이페이지 화면에서는 뒤로가기 버튼 제거 */}
+                <View style={styles.backButton} />
 
                 <Text style={[styles.headerTitle, { color: isDark ? '#FFFFFF' : '#1F2937' }]}>마이페이지</Text>
 
@@ -154,17 +260,38 @@ const MyScreen: React.FC<MyScreenProps> = ({ onNavigate }) => {
                 {/* Profile Photo */}
                 <View style={styles.profilePhotoContainer}>
                     <TouchableOpacity style={styles.profilePhotoButton} onPress={handlePhotoUpload}>
-                        {profilePhoto ? (
-                            <Image source={{ uri: profilePhoto }} style={styles.profilePhoto} />
-                        ) : (
-                            <View style={[styles.profilePhotoPlaceholder, { backgroundColor: '#FCCEE8' }]}>
-                                <AvartarIcon width={50} height={50} />
-                            </View>
-                        )}
+                        <>
+                            {profilePhoto ? (
+                                <Image source={{ uri: profilePhoto }} style={styles.profilePhoto} />
+                            ) : (
+                                <View
+                                    style={[
+                                        styles.profilePhotoPlaceholder,
+                                        {
+                                            // 성별에 따라 기본 프로필 배경색 분기: 남자(파랑), 여자/기타(핑크)
+                                            backgroundColor:
+                                                profileData.gender === 'MALE' ? '#BFDBFE' : '#FCCEE8',
+                                        },
+                                    ]}
+                                >
+                                    {profileData.gender === 'MALE' ? (
+                                        <MaleAvatarIcon width={50} height={50} />
+                                    ) : (
+                                        <FemaleAvatarIcon width={50} height={50} />
+                                    )}
+                                </View>
+                            )}
 
-                        <View style={styles.cameraBadge}>
-                            <CameraIcon width={28} height={28} />
-                        </View>
+                            <View style={styles.cameraBadge}>
+                                <CameraIcon width={28} height={28} />
+                            </View>
+
+                            {isUploadingPhoto && (
+                                <View style={styles.uploadingOverlay}>
+                                    <ActivityIndicator size="small" color="#FFFFFF" />
+                                </View>
+                            )}
+                        </>
                     </TouchableOpacity>
 
                     {/* Name + Gender */}
@@ -173,17 +300,21 @@ const MyScreen: React.FC<MyScreenProps> = ({ onNavigate }) => {
                             {profileData.name}
                         </Text>
 
-                        {profileData.gender === 'FEMALE' && <FemaleIcon width={24} height={24} style={{ paddingTop: 2 }} />}
+                        {profileData.gender === 'MALE' ? (
+                            <MaleIcon width={24} height={24} style={{ paddingTop: 2 }} />
+                        ) : profileData.gender === 'FEMALE' ? (
+                            <FemaleIcon width={24} height={24} style={{ paddingTop: 2 }} />
+                        ) : null}
                     </View>
 
                     <Text style={[styles.userDetails, { color: isDark ? '#BBBBBB' : '#4A5565' }]}>
-                        {profileData.job || '직업 미설정'} · {profileData.region || '지역 미설정'}
+                        {mapEnumToDisplayValue('job', profileData.job) || '직업 미설정'} · {mapEnumToDisplayValue('region', profileData.region) || '지역 미설정'}
                     </Text>
                 </View>
 
                 {/* Birth Date & MBTI */}
                 <View style={styles.detailsRow}>
-                    <View style={[styles.detailBox, { backgroundColor: isDark ? '#222' : '#F9FAFB' }]}>
+                    <View style={[styles.detailBox, { backgroundColor: profileData.gender === 'MALE' ? (isDark ? '#1E3A5F' : '#EFF6FF') : (isDark ? '#4A2A3A' : '#FDF2F8') }]}>
                         <Text style={[styles.detailLabel, { color: isDark ? '#AAA' : '#6A7282' }]}>생년월일</Text>
 
                         <Text style={[styles.detailText, { color: isDark ? '#FFF' : '#1E2939' }]}>
@@ -191,11 +322,11 @@ const MyScreen: React.FC<MyScreenProps> = ({ onNavigate }) => {
                         </Text>
                     </View>
 
-                    <View style={[styles.detailBox, { backgroundColor: isDark ? '#222' : '#F9FAFB' }]}>
+                    <View style={[styles.detailBox, { backgroundColor: profileData.gender === 'MALE' ? (isDark ? '#1E3A5F' : '#EFF6FF') : (isDark ? '#4A2A3A' : '#FDF2F8') }]}>
                         <Text style={[styles.detailLabel, { color: isDark ? '#AAA' : '#6A7282' }]}>MBTI</Text>
 
                         <Text style={[styles.detailText, { color: isDark ? '#FFF' : '#1E2939' }]}>
-                            {profileData.mbti || 'MBTI 미설정'}
+                            {!profileData.mbti || profileData.mbti === 'UNKNOWN' ? '모름' : profileData.mbti}
                         </Text>
                     </View>
                 </View>
@@ -244,16 +375,17 @@ const MyScreen: React.FC<MyScreenProps> = ({ onNavigate }) => {
                         style={[
                             styles.introBox,
                             {
-                                backgroundColor: isDark ? '#222' : '#F9FAFB',
-                                borderColor: isDark ? '#444' : '#D1D5DB',
-                                borderWidth: isEditingIntro ? 1 : 0,
+                                backgroundColor: profileData.gender === 'MALE' ? (isDark ? '#1E3A5F' : '#EFF6FF') : (isDark ? '#4A2A3A' : '#FDF2F8'),
                             },
                         ]}
                     >
                         {isEditingIntro ? (
                             <TextInput
-                                style={[styles.introInput, { color: isDark ? '#EEE' : '#6B7280' }]}
+                                // 편집 시에도 보기 모드와 동일한 텍스트 색상 사용
+                                style={[styles.introInput, { color: isDark ? '#CCC' : '#364153' }]}
                                 multiline
+                                scrollEnabled
+                                maxLength={255}
                                 value={selfIntroduction}
                                 onChangeText={setSelfIntroduction}
                                 placeholder="자기소개를 입력하세요"
@@ -270,7 +402,7 @@ const MyScreen: React.FC<MyScreenProps> = ({ onNavigate }) => {
                 {/* Action Buttons */}
                 <View style={styles.actionButtonsContainer}>
                     <TouchableOpacity
-                        style={[styles.editProfileButton, { backgroundColor: isDark ? '#222' : '#F9FAFB' }]}
+                        style={[styles.editProfileButton, { backgroundColor: profileData.gender === 'MALE' ? (isDark ? '#1E3A5F' : '#EFF6FF') : (isDark ? '#4A2A3A' : '#FDF2F8') }]}
                         onPress={() => onNavigate('profileEdit')}
                     >
                         <View style={styles.pencil2IconWrapper}>
@@ -282,7 +414,7 @@ const MyScreen: React.FC<MyScreenProps> = ({ onNavigate }) => {
                     </TouchableOpacity>
 
                     <TouchableOpacity
-                        style={[styles.settingsButton, { backgroundColor: isDark ? '#222' : '#F9FAFB' }]}
+                        style={[styles.settingsButton, { backgroundColor: profileData.gender === 'MALE' ? (isDark ? '#1E3A5F' : '#EFF6FF') : (isDark ? '#4A2A3A' : '#FDF2F8') }]}
                         onPress={() => onNavigate('settings')}
                     >
                         <OptionIcon width={18} height={18} color={isDark ? '#FFF' : '#1E2939'} />
@@ -290,8 +422,8 @@ const MyScreen: React.FC<MyScreenProps> = ({ onNavigate }) => {
                     </TouchableOpacity>
 
                     <TouchableOpacity
-                        style={[styles.logoutButton, { backgroundColor: isDark ? '#222' : '#F9FAFB' }]}
-                        onPress={() => Alert.alert('알림', '로그아웃')}
+                        style={[styles.logoutButton, { backgroundColor: profileData.gender === 'MALE' ? (isDark ? '#1E3A5F' : '#EFF6FF') : (isDark ? '#4A2A3A' : '#FDF2F8') }]}
+                        onPress={handleLogout}
                     >
                         <LogoutIcon width={18} height={18} color={isDark ? '#FFF' : '#1E2939'} />
                         <Text style={[styles.logoutButtonText, { color: isDark ? '#FFFFFF' : '#1E2939' }]}>
@@ -303,6 +435,24 @@ const MyScreen: React.FC<MyScreenProps> = ({ onNavigate }) => {
 
             {/* Bottom Navigation */}
             <BottomNavigation onNavigate={onNavigate} currentScreen={'mypage'} />
+            <ConfirmModal
+                visible={showLogoutConfirmModal}
+                title="로그아웃"
+                message="정말 로그아웃 하시겠어요?"
+                confirmText="로그아웃"
+                cancelText="취소"
+                onConfirm={handleLogoutConfirm}
+                onCancel={() => setShowLogoutConfirmModal(false)}
+            />
+            <ConfirmModal
+                visible={showLogoutErrorModal}
+                title="오류"
+                message="로그아웃 중 문제가 발생했습니다."
+                confirmText="확인"
+                cancelText={undefined}
+                onConfirm={() => setShowLogoutErrorModal(false)}
+                onCancel={() => setShowLogoutErrorModal(false)}
+            />
         </View>
     );
 };
@@ -371,6 +521,18 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
 
+    uploadingOverlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        borderRadius: 64,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+
     nameContainer: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -381,12 +543,13 @@ const styles = StyleSheet.create({
     userName: {
         fontSize: 20,
         fontWeight: '700',
-        paddingLeft: 16,
+        textAlign: 'center',
     },
 
     userDetails: {
         fontSize: 16,
         lineHeight: 24,
+        textAlign: 'center',
     },
 
     detailsRow: {
@@ -444,13 +607,13 @@ const styles = StyleSheet.create({
     introBox: {
         borderRadius: 10,
         padding: 16,
-        height: 80,
+        minHeight: 120, // 대략 5줄 정도 보이도록 높이 확보
         flexDirection: 'row',
     },
 
     introInput: {
         flex: 1,
-        height: 48,
+        minHeight: 120, // 5줄 정도 기본 높이
         fontSize: 14,
         lineHeight: 24,
         textAlignVertical: 'top',

@@ -23,6 +23,14 @@
         {
           "kakaoAppKey": "49911f5c0619015e49536426ed08328f"
         }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#ffffff",
+          "sounds": []
+        }
       ]
     ]
   }

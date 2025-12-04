@@ -20,7 +20,10 @@ const ReligionSelector: React.FC<ReligionSelectorProps> = ({
     borderColor = '#9CA3AF',
     textColor = '#364153',
 }) => {
-    const toggle = (next: string) => onChange(value === next ? '' : next);
+    const handleSelect = (next: string) => {
+        if (value === next) return;
+        onChange(next);
+    };
 
     return (
         <View style={styles.inputGroup}>
@@ -31,7 +34,7 @@ const ReligionSelector: React.FC<ReligionSelectorProps> = ({
                     <SelectableButton
                         label="무교"
                         selected={value === '무교'}
-                        onPress={() => toggle('무교')}
+                        onPress={() => handleSelect('무교')}
                         error={error && !value}
                         bgColor={bgColor}
                         borderColor={borderColor}
@@ -41,7 +44,7 @@ const ReligionSelector: React.FC<ReligionSelectorProps> = ({
                     <SelectableButton
                         label="기독교"
                         selected={value === '기독교'}
-                        onPress={() => toggle('기독교')}
+                        onPress={() => handleSelect('기독교')}
                         error={error && !value}
                         bgColor={bgColor}
                         borderColor={borderColor}
@@ -53,7 +56,7 @@ const ReligionSelector: React.FC<ReligionSelectorProps> = ({
                     <SelectableButton
                         label="천주교"
                         selected={value === '천주교'}
-                        onPress={() => toggle('천주교')}
+                        onPress={() => handleSelect('천주교')}
                         error={error && !value}
                         bgColor={bgColor}
                         borderColor={borderColor}
@@ -63,7 +66,7 @@ const ReligionSelector: React.FC<ReligionSelectorProps> = ({
                     <SelectableButton
                         label="불교"
                         selected={value === '불교'}
-                        onPress={() => toggle('불교')}
+                        onPress={() => handleSelect('불교')}
                         error={error && !value}
                         bgColor={bgColor}
                         borderColor={borderColor}
@@ -75,7 +78,7 @@ const ReligionSelector: React.FC<ReligionSelectorProps> = ({
                     <SelectableButton
                         label="기타"
                         selected={value === '기타'}
-                        onPress={() => toggle('기타')}
+                        onPress={() => handleSelect('기타')}
                         error={error && !value}
                         bgColor={bgColor}
                         borderColor={borderColor}

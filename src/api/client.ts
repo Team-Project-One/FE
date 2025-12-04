@@ -1,4 +1,5 @@
 import { API_BASE_URL } from './config';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const normalizePath = (path: string) => {
     if (path.startsWith('http://') || path.startsWith('https://')) {
@@ -56,6 +57,14 @@ export const request = async <T>(path: string, options: RequestOptions = {}): Pr
 
     // HTTP 상태 코드 체크
     if (!response.ok) {
+        // 401 Unauthorized 에러 발생 시 토큰 삭제
+        if (response.status === 401) {
+            console.log('[API] 401 Unauthorized - Clearing tokens');
+            await AsyncStorage.removeItem('@auth/accessToken');
+            await AsyncStorage.removeItem('@auth/refreshToken');
+            await AsyncStorage.removeItem('@auth/userId');
+        }
+
         const fallbackMessage = '요청 처리 중 문제가 발생했습니다.';
         const message =
             (data &&
