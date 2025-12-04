@@ -3,7 +3,7 @@ import { View, Text } from 'react-native';
 import styles from '../../styles/signup/singupDetailedStyles';
 import SelectableButton from './SelectableButton';
 
-interface SmokingSelectorProps {
+interface SexualOrientationSelectorProps {
     value: string;
     onChange: (val: string) => void;
     error?: boolean;
@@ -12,7 +12,7 @@ interface SmokingSelectorProps {
     textColor?: string;
 }
 
-const SmokingSelector: React.FC<SmokingSelectorProps> = ({
+const SexualOrientationSelector: React.FC<SexualOrientationSelectorProps> = ({
     value,
     onChange,
     error,
@@ -20,8 +20,6 @@ const SmokingSelector: React.FC<SmokingSelectorProps> = ({
     borderColor = '#9CA3AF',
     textColor = '#364153',
 }) => {
-    // 한번 선택한 옵션을 다시 눌러도 해제되지 않도록 하고,
-    // 다른 옵션을 눌렀을 때만 선택이 변경되도록 처리
     const handleSelect = (next: string) => {
         if (value === next) return;
         onChange(next);
@@ -29,14 +27,14 @@ const SmokingSelector: React.FC<SmokingSelectorProps> = ({
 
     return (
         <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: textColor }]}>흡연 여부</Text>
+            <Text style={[styles.label, { color: textColor }]}>성지향성</Text>
 
             <View style={styles.twoColumnContainer}>
                 <View style={styles.buttonRow}>
                     <SelectableButton
-                        label="비흡연"
-                        selected={value === '비흡연'}
-                        onPress={() => handleSelect('비흡연')}
+                        label="이성애자"
+                        selected={value === '이성애자'}
+                        onPress={() => handleSelect('이성애자')}
                         error={error && !value}
                         bgColor={bgColor}
                         borderColor={borderColor}
@@ -44,9 +42,9 @@ const SmokingSelector: React.FC<SmokingSelectorProps> = ({
                     />
 
                     <SelectableButton
-                        label="흡연"
-                        selected={value === '흡연'}
-                        onPress={() => handleSelect('흡연')}
+                        label="동성애자"
+                        selected={value === '동성애자'}
+                        onPress={() => handleSelect('동성애자')}
                         error={error && !value}
                         bgColor={bgColor}
                         borderColor={borderColor}
@@ -58,4 +56,5 @@ const SmokingSelector: React.FC<SmokingSelectorProps> = ({
     );
 };
 
-export default SmokingSelector;
+export default SexualOrientationSelector;
+

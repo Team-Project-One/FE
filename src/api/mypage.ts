@@ -23,8 +23,11 @@ export interface UpdateProfileRequest {
 export const updateIntroduction = async (userId: number, introduction: string): Promise<void> => {
     console.log('[API] updateIntroduction called with userId', userId, 'introduction', introduction);
     
+    const trimmed = introduction.trim();
+    const limited = trimmed.length > 255 ? trimmed.slice(0, 255) : trimmed;
+
     const updateData: UpdateProfileRequest = {
-        introduction: introduction.trim(),
+        introduction: limited,
     };
 
     console.log('[API] updateIntroduction request body:', JSON.stringify(updateData));
@@ -71,8 +74,10 @@ export const updateProfile = async (userId: number, formData: SignupDetailedForm
         if (formData.contactFrequency && formData.contactFrequency.trim()) {
             updateData.contactFrequency = mapFieldValue('contactFrequency', formData.contactFrequency);
         }
-        if (formData.mbti && formData.mbti.trim()) {
-            updateData.mbti = formData.mbti;
+        // MBTI는 optional. 값이 비어 있으면 'UNKNOWN'으로 보내 BE에서 null로 초기화하도록 처리
+        if (formData.mbti !== undefined) {
+            const trimmed = formData.mbti.trim();
+            updateData.mbti = trimmed ? trimmed : 'UNKNOWN';
         }
 
         console.log('[API] updateProfile updateData (Enum values):', updateData);
@@ -92,5 +97,49 @@ export const updateProfile = async (userId: number, formData: SignupDetailedForm
         console.error('[API] updateProfile error:', error);
         throw error;
     }
+};
+
+export interface ProfileImageFile {
+    uri: string;
+    name?: string;
+    type?: string;
+}
+
+export const updateProfileImage = async (userId: number, file: ProfileImageFile): Promise<string> => {
+    if (!file?.uri) {
+        throw new Error('올릴 프로필 이미지를 찾을 수 없습니다.');
+    }
+
+    const formData = new FormData();
+    formData.append('profileImage', {
+        uri: file.uri,
+        name: file.name ?? 'profile.jpg',
+        type: file.type ?? 'image/jpeg',
+    } as any);
+
+    const response = await request<string>(`/my-page/${userId}/profile-image`, {
+        method: 'PATCH',
+        headers: {
+            'Content-Type': 'multipart/form-data',
+        },
+        body: formData,
+    });
+
+    return response;
+};
+
+// 프로필 이미지를 삭제하여 기본 이미지 상태로 되돌리기
+export const deleteProfileImage = async (userId: number): Promise<void> => {
+    await request<void>(`/my-page/${userId}/profile-image`, {
+        method: 'DELETE',
+    });
+};
+
+// 계정 탈퇴
+export const deleteUser = async (userId: number): Promise<number> => {
+    console.log('[API] deleteUser called with userId', userId);
+    return request<number>(`/my-page/${userId}`, {
+        method: 'DELETE',
+    });
 };
 

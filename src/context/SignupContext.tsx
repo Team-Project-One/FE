@@ -14,7 +14,7 @@ const defaultSignupState: SignupFormState = {
     name: '',
     birthDate: '',
     gender: '',
-    sexualOrientation: 'STRAIGHT',
+    sexualOrientation: '',
     job: '',
     region: '',
     drinkingFrequency: '',
