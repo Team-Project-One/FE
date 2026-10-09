@@ -12,7 +12,7 @@
 ```properties
 spring.datasource.url=jdbc:mysql://localhost:3306/TeamProject1?serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true&useSSL=false
 spring.datasource.username=root
-spring.datasource.password=zxcv8240?
+spring.datasource.password={DB_PASSWORD}
 ```
 
 ### 3. 서버 실행 방법
